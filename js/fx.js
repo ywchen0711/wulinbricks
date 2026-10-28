@@ -56,10 +56,12 @@ export function makeFX(scene) {
   const scar = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 1), new THREE.MeshBasicMaterial({ color: '#0a0c10', transparent: true, opacity: 0, depthWrite: false }));
   for (const m of [scar, scarGlow]) { m.rotation.x = -Math.PI / 2; m.position.y = 0.065; m.visible = false; root.add(m); }
 
-  const S = { wave: null, ring: null, shake: 0 };
+  // the burst where two blows meet: a ball of light that swells and fades
+  const burst = add(new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: '#fff2d0', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }))); burst.visible = false; root.add(burst);
+  const S = { wave: null, ring: null, shake: 0, burst: null };
   return {
     S,
-    reset() { wave.visible = false; ghosts.forEach((g) => (g.visible = false)); S.wave = null; scar.visible = scarGlow.visible = false; P.length = 0; samples.length = 0; S.ring = null; },
+    reset() { core.scale.set(1, 1, 1); glow.scale.set(1, 1, 1); burst.visible = false; S.burst = null; wave.visible = false; ghosts.forEach((g) => (g.visible = false)); S.wave = null; scar.visible = scarGlow.visible = false; P.length = 0; samples.length = 0; S.ring = null; },
     // the crescent sets off from a point, along a direction on the floor
     launch(from, dir) {
       S.wave = { p: from.clone(), d: dir.clone().setY(0).normalize(), age: 0, from: from.clone(), hist: [] };
@@ -107,8 +109,13 @@ export function makeFX(scene) {
       }
       for (let i = 0; i < NP; i++) { const q = P[i]; if (!q) { pc[i * 3] = pc[i * 3 + 1] = pc[i * 3 + 2] = 0; continue; } const k = Math.min(1, q.life / q.l0 * 1.5); pp.set([q.p.x, q.p.y, q.p.z], i * 3); pc.set([q.col[0] * k, q.col[1] * k, q.col[2] * k], i * 3); }
       pg.attributes.position.needsUpdate = pg.attributes.color.needsUpdate = true;
+      if (S.burst) { const b = S.burst; b.age += dt; burst.visible = true; burst.position.copy(b.p); burst.scale.setScalar(0.2 + b.age * 4 * b.k); burst.material.opacity = Math.max(0, 1 - b.age / 0.35); if (b.age > 0.35) { S.burst = null; burst.visible = false; } }
+      if (S.wave?.shrink) { const s = S.wave.shrink; core.scale.set(1, 1, 1).multiplyScalar(s); glow.scale.set(1, 1, 1).multiplyScalar(s); }
       S.shake = Math.max(0, S.shake - dt * 0.9);
     },
+    clashBurst(p, k = 1) { S.burst = { p: p.clone(), age: 0, k }; for (let i = 0; i < 120; i++) { const v = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.3, Math.random() - 0.5).normalize().multiplyScalar(3 + Math.random() * 6); spark(p, v, 0.5 + Math.random() * 0.6, [[1.5, 1.3, 0.8], [0.6, 1.1, 1.6], [0.7, 1.4, 1.0]][i % 3], 2, 3); } S.ring = { p: new THREE.Vector3(p.x, 0, p.z), age: 0, size: 1.6 }; },
+    // the crescent broken where it was met: gone in a shower of light
+    breakWave() { const W = S.wave; if (!W) return; for (let i = 0; i < 50; i++) spark(W.p.clone().add(new THREE.Vector3(0, (Math.random() - 0.5) * 1.2, 0)), new THREE.Vector3((Math.random() - 0.5) * 4, Math.random() * 3, (Math.random() - 0.5) * 4), 0.5 + Math.random() * 0.4, [0.6, 1.0, 1.5], 2, 2); W.age = Math.max(W.age, 1.5); },
     hitSparks(p, d, kind) { S.shake = Math.max(S.shake, 0.3); const wind = kind === 'wind'; for (let i = 0; i < 60; i++) spark(p.clone().add(new THREE.Vector3(0, (Math.random() - 0.5) * (wind ? 0.6 : 1.4), 0)), new THREE.Vector3((Math.random() - 0.5) * 6, Math.random() * 4, (Math.random() - 0.3) * 3).addScaledVector(d, 3), 0.4 + Math.random() * 0.5, wind ? (Math.random() < 0.5 ? [0.6, 0.55, 0.45] : [0.7, 1.3, 1.0]) : Math.random() < 0.5 ? [1.4, 1.1, 0.6] : [0.6, 1.0, 1.5], 2, 5); },
     // a mote of dust, wind or light, for any move to throw about
     puff: (p, v, life, col, drag = 1.5, grav = 0) => spark(p, v, life, col, drag, grav),

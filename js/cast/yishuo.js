@@ -4,6 +4,7 @@
 // a football, which never leaves him. At rest he keeps it up off his foot, three touches, then lets it rest.
 import * as THREE from '../../lib/three.module.min.js';
 import { makeFig, plastic, rbox } from '../brick/minifig.js';
+import { ballStep } from '../physics.js';
 
 export const BALL_R = 0.16;
 export const YISHUO = {
@@ -35,7 +36,15 @@ export const YISHUO = {
     };
   },
   // the ball at rest: on his instep, or in front of his toe
-  idleTick(c, r) { const h = c.hero, want = r.ball.rest ? h.toe(0.2) : h.instep().add(c.V(0, BALL_R + r.ball.up, 0)); h.ballAt(h.ball.position.distanceTo(want) > 0.6 ? want : h.ball.position.clone().lerp(want, 1 - Math.exp(-c.dt * 20))); h.spinBall(c.dt * (r.ball.rest ? 0 : 6), c.V(1, 0, 0)); },
+  idleTick(c, r) {
+    const h = c.hero, me = c.me;
+    if (h.loose) { // the ball got away: once it has stopped, go and fetch it, then dribble it home
+      if (h.loose.rest && !me.walk) { const b = h.ball.position, here = me.pos.setY(0), d = b.clone().setY(0).sub(here), L = d.length();
+        if (L < 0.42) { h.loose = null; h.fetching = false; const H = h.home || { x: 0, z: 0, yaw: 0 }; me.walkTo(H.x, H.z, { speed: 1.4, face: H.yaw }); }
+        else { h.fetching = true; d.normalize(); me.walkTo(b.x - d.x * 0.3, b.z - d.z * 0.3, { speed: 2.2 }); } }
+      return;
+    }
+    const want = r.ball.rest ? h.toe(0.2) : h.instep().add(c.V(0, BALL_R + r.ball.up, 0)); h.ballAt(h.ball.position.distanceTo(want) > 0.6 ? want : h.ball.position.clone().lerp(want, 1 - Math.exp(-c.dt * 20))); h.spinBall(c.dt * (r.ball.rest ? 0 : 6), c.V(1, 0, 0)); },
 };
 
 function ballTexture() { // white, with black pentagons where the twelve corners of an icosahedron fall, and seams
@@ -73,6 +82,8 @@ export function buildYiShuo(scene) {
     spinBall(a, axis) { bm.rotateOnWorldAxis(axis.clone().normalize(), a); },
     sway(t, speed = 0) { ties.forEach((p, i) => { p.rotation.x = -0.35 - speed * 0.9 + Math.sin(t * 5.6 + i * 1.7) * 0.14; p.rotation.z = (i ? 1 : -1) * (0.14 + Math.sin(t * 3.3 + i) * 0.05); }); },
     setGlow() {},
+    // a loose ball runs under its own physics, whatever he is doing
+    physics(dt, W, f) { if (!H2.loose) return; H2.loose.owner ||= f; ballStep(ball, H2.loose, dt, W, BALL_R); const v = H2.loose.v; if (v.lengthSq() > 1e-4) H2.spinBall(H2.loose.spin * dt, V(v.z, 0, -v.x)); },
   };
   return H2;
 }

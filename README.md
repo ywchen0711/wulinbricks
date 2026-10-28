@@ -57,6 +57,23 @@ and English (no recorded voices yet). Drag the picture to look around while it p
 
 A film can hold someone down until a cue releases him.
 
+## When things meet
+
+`js/physics.js` handles collisions.
+
+- **Blows meeting blows.** A crescent of sword qi, a whirlwind ball and other projectiles are things in the world.
+  When two from different fighters meet, they clash in a burst of light.
+  - If their power is close (each strike's power varies a little), they cancel each other out. The ball is not
+    destroyed: it is knocked into the air and goes on under its own physics.
+  - Otherwise the stronger breaks through, weakened by what it overcame, and strikes with less force.
+- **Bodies.** Figures cannot pass through each other. Standing figures shove apart, and one thrown back by a blow
+  crashes into whoever is behind him and knocks him on.
+- **The loose ball.** It bounces, rolls to a stop and glances off anyone it hits; Yi Shuo goes to fetch it and
+  dribbles it home.
+
+In the duel, **⚔ 同時出招 Both at once** has the brothers strike together, and auto sparring does this every third
+round.
+
 ## How it is made
 
 | File | What it holds |
@@ -67,6 +84,7 @@ A film can hold someone down until a cue releases him.
 | `js/fx.js` | the effects: the crescent of sword qi, the blade's trail, sparks, wind, rings, the cut in the floor |
 | `js/targets.js` | the post and the wall, every brick its own piece so a cut can split it |
 | `js/engine.js` | the world: fighters with marks, walking, turning, gestures, moves, blows, the camera |
+| `js/physics.js` | blows that meet (cancel or break through), bodies that can't overlap, the loose ball |
 | `js/react.js`, `js/gestures.js` | taking a blow; small actions for films (point, raise, cower, cheer...) |
 | `js/films/*.js`, `js/film.js` | an episode (cast and marks, lines, cues, shots) and its player |
 | `js/stage.js` | the practice ground at dusk |

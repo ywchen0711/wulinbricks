@@ -18,14 +18,17 @@ export const YIDAO = {
   events: [
     { t: 0.3, run: (c) => c.sfx.gather(c.rate) },
     { t: 1.04, run: (c) => c.sfx.cut(c.rate) },
-    { t: 1.17, run: (c) => { c.sfx.launch(c.rate); c.fx.launch(c.toWorld(c.V(0, 0.95, c.p.fwd + 0.95)), c.dirWorld(c.V(0, 0, 1))); c.fx.S.wave.hitList = []; } },
+    { t: 1.17, run: (c) => { c.sfx.launch(c.rate); c.fx.launch(c.toWorld(c.V(0, 0.95, c.p.fwd + 0.95)), c.dirWorld(c.V(0, 0, 1))); c.fx.S.wave.hitList = []; c.fx.S.wave.power = 0.8 + Math.random() * 0.4; c.fx.S.wave.id = 'qi' + Math.random(); } },
   ],
   // every frame: the crescent splits what it runs through
   tick(c) {
     const W = c.fx.S.wave; if (!W || W.age >= 1.5) return;
+    // it is a thing in the world: it can meet what others send against it
+    c.projectile({ id: W.id, kind: 'qi', owner: c.me, name: YIDAO.name, pos: W.p.clone(), vel: W.d.clone().multiplyScalar(10.5), r: 0.3, h: 0.5 * (1.1 + W.age * 0.9), power: W.power ?? 1,
+      cancel: () => c.fx.breakWave(), weaken: (k) => { W.power = Math.max(0.2, (W.power ?? 1) - k); W.shrink = (W.shrink || 1) * 0.75; } });
     if (c.targets) c.targets.cut(W.p.x, W.p.z, W.d, 99, () => { c.sfx.hit(); c.fx.hitSparks(W.p, W.d); });
     // anyone standing in its path is struck and thrown down, one after another as it reaches them
-    const w = c.toLocal(W.p); for (const f of c.foes) { if (W.hitList?.includes(f)) continue; const l = c.toLocal(f.pos); if (w.z >= l.z - 0.2 && w.z < l.z + 0.6 && Math.abs(w.x - l.x) < 0.6) { (W.hitList ||= []).push(f); f.hit({ power: 1, dir: W.d, at: f.pos.add(c.V(0, 0.85, 0)) }); c.sfx.hit(0.6); } }
+    const w = c.toLocal(W.p); for (const f of c.foes) { if (W.hitList?.includes(f)) continue; const l = c.toLocal(f.pos); if (w.z >= l.z - 0.2 && w.z < l.z + 0.6 && Math.abs(w.x - l.x) < 0.6) { (W.hitList ||= []).push(f); f.hit({ power: W.power ?? 1, dir: W.d, at: f.pos.add(c.V(0, 0.85, 0)) }); c.sfx.hit(0.6); } }
   },
   keys: [
     { t: 0.00, p: { armR: -0.55, outR: 0.12, armL: -0.95, outL: -0.25, hipR: -0.3, hipL: 0.25, tilt: 0.04, yaw: 0.35, head: -0.3 } },

@@ -36,7 +36,7 @@ function autoCam() {
   const [a, b] = W.fighters, mid = a.pos.add(b.pos).multiplyScalar(0.5), act = W.fighters.find((f) => f.react) || W.fighters.find((f) => f.move);
   const span = a.pos.distanceTo(b.pos), focus = act ? mid.clone().lerp(act.pos, 0.35) : mid;
   S.camFocus = (S.camFocus || focus.clone()).lerp(focus, 0.04); const d = 4.2 + span * 0.85, k = 0.11 * d; // off-centre, clear of the panel on the left
-  return { pos: V(S.camFocus.x + d, 1.5 + Math.sin(W.clock * 0.2) * 0.1, S.camFocus.z + k + 0.8), look: V(S.camFocus.x, 0.55, S.camFocus.z + k), fov: 40 };
+  return { pos: V(S.camFocus.x + d, 1.5 + Math.sin(W.clock * 0.2) * 0.1, S.camFocus.z + 0.8), look: V(S.camFocus.x, 0.55, S.camFocus.z + k * 2.2), fov: 40 };
 }
 
 // ---------------------------------------------------------------- the page
@@ -55,7 +55,7 @@ function texts() {
   } else {
     $('duelp').innerHTML = `<h2>${T('兄弟對打', 'The brothers spar')}</h2>` + W.fighters.map((f, i) => `<div class="fr"><b>${f.CH.name[lang]}</b>${f.CH.moves.map((id) => `<button data-move="${id}" data-f="${i}">${MOVES[id].name[lang]}</button>`).join('')}
       <div class="tests"><span>${T('挨打測試', 'Take a blow')}</span><button data-test="light" data-f="${i}">${T('輕擊', 'Light')}</button><button data-test="heavy" data-f="${i}">${T('重擊', 'Heavy')}</button><button data-test="down" data-f="${i}">${T('擊倒', 'Down')}</button></div></div>`).join('')
-      + `<button id="autoduel" class="${S.auto ? 'on' : ''}">${T('▶ 自動對打', '▶ Auto sparring')}</button>`;
+      + `<button id="together">${T('⚔ 同時出招', '⚔ Both at once')}</button><button id="autoduel" class="${S.auto ? 'on' : ''}">${T('▶ 自動對打', '▶ Auto sparring')}</button>`;
     $('hint').textContent = T('按招式攻擊對方，或用挨打測試看被打的反應．拖曳畫面轉視角', 'Attack with a move, or try how each takes a blow. Drag to look around');
   }
 }
@@ -64,6 +64,7 @@ document.addEventListener('click', (e) => {
   const c = e.target.closest('[data-cast]'); if (c && c.dataset.cast !== S.who) setup('practice', c.dataset.cast);
   const md = e.target.closest('[data-mode]'); if (md && md.dataset.mode !== S.mode) setup(md.dataset.mode);
   const t = e.target.closest('[data-test]'); if (t) test(+t.dataset.f, t.dataset.test);
+  if (e.target.id === 'together') together();
   if (e.target.id === 'autoduel') { wake(); S.auto = !S.auto; S.idleFor = 0; texts(); }
 });
 $('slow').onclick = () => { S.slow = !S.slow; texts(); };
@@ -78,11 +79,19 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyS') $('slow').click(); if (e.code === 'KeyR') $('reset').click(); if (e.code === 'KeyC') { if (O.on) $('auto').click(); else O.wantTake = true; }
 });
 
+// both strike at the same moment: their blows meet in the middle
+function together() { wake(); for (const f of W.fighters) if (f.busy) return; for (const f of W.fighters) perform(f, f.CH.moves[0]); }
+// a word over the picture when blows meet
+W.note = (kind, at, o) => {
+  if (kind === 'bump') return; const el = $('note');
+  el.textContent = kind === 'cancel' ? T('抵銷！', 'Cancelled out!') : T(`${o.win.owner.CH.name.zh}的${o.win.name.zh}勝出！`, `${o.win.owner.CH.name.en}’s ${o.win.name.en} wins!`);
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+};
 // the brothers taking turns, when asked
 function autoDuel(dt) {
   if (!S.auto || S.mode !== 'duel') return;
   const busy = W.fighters.some((f) => f.busy); S.idleFor = busy ? 0 : S.idleFor + dt;
-  if (S.idleFor > 0.9) { const f = W.fighters[S.autoTurn++ % 2]; perform(f, f.CH.moves[0]); S.idleFor = 0; }
+  if (S.idleFor > 0.9) { const n = S.autoTurn++; if (n % 3 === 2) together(); else { const f = W.fighters[n % 2]; perform(f, f.CH.moves[0]); } S.idleFor = 0; }
 }
 function frame(dt) {
   W.slow = S.slow ? 0.25 : 1; W.step(dt); autoDuel(dt);
@@ -96,7 +105,7 @@ W.resize(); addEventListener('resize', () => W.resize());
 setup(q.get('mode') === 'duel' ? 'duel' : 'practice', HEROES.includes(q.get('who')) ? q.get('who') : HEROES.includes(saved) ? saved : 'yirui');
 requestAnimationFrame(loop);
 window.APP = {
-  W, S, setup, perform, test, O,
+  W, S, setup, perform, test, O, together,
   // run a move from its start to a moment at a steady 60 frames a second, and draw it (for tests and pictures)
   sim(t, id, i = 0) { const f = W.fighters[i]; perform(f, id || f.CH.moves[0]); let n = 0; while (f.move && f.t < t && n++ < 3000) W.step(1 / 60); this.render(); return f.t; },
   run(sec) { for (let i = 0; i < sec * 60; i++) { W.step(1 / 60); autoDuel(1 / 60); } this.render(); },

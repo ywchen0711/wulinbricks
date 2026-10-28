@@ -16,6 +16,7 @@ function tone(f0, f1, dur, { at = 0, vol = 0.3, type = 'sine', a = 0.01 } = {}) 
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g).connect(out); o.start(t); o.stop(t + dur + 0.05);
 }
 export const SFX = {
+  clash(k = 1) { if (!ac) return; tone(70, 30, 0.9, { vol: 0.9 * k }); noise(0.6, { f0: 3000, f1: 200, q: 0.6, vol: 0.6 * k, type: 'lowpass' }); tone(1320, 1250, 1.0, { vol: 0.08, at: 0.02 }); tone(1980, 1900, 0.8, { vol: 0.05, at: 0.02 }); noise(1.1, { at: 0.05, f0: 1500, f1: 300, q: 2, vol: 0.2, a: 0.2 }); },
   thud(k = 1) { if (!ac) return; tone(120, 55, 0.18, { vol: 0.6 * k }); noise(0.1, { f0: 1500, f1: 400, q: 0.8, vol: 0.4 * k, type: 'lowpass' }); },
   // a cry, by mouth: a voiced glide through a vowel-ish filter (higher for a kid)
   ouch(kid = false, kind = 'light') { if (!ac || muted) return; const f = kid ? 520 : 300, d = kind === 'down' ? 0.45 : 0.25, t = now(); const o = ac.createOscillator(), b = ac.createBiquadFilter(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f * 1.3, t); o.frequency.exponentialRampToValueAtTime(f * 0.7, t + d); b.type = 'bandpass'; b.frequency.value = kid ? 1400 : 900; b.Q.value = 3; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(b).connect(g).connect(out); o.start(t); o.stop(t + d + 0.05); },

@@ -81,18 +81,19 @@ export const XUANFENG = {
   start(c) {
     const h = c.hero; c.peek(KICK); this._C = c.toLocal(h.instep()).add(V(0, BALL_R * 0.9, BALL_R * 0.9)); c.peek(0); this._from = h.toe(0.2);
     let foe = null, best = 1e9; for (const f of c.foes) { const l = c.toLocal(f.pos); if (l.z > 0.8 && Math.abs(l.x) < 1.0 && l.z < best) { best = l.z; foe = f; } }
-    this._s = { post: false, wall: false, wallAt: null, foe, end: foe ? best - 0.28 : WALL, endY: foe ? (foe.CH.spec.age === 'kid' ? 0.55 : 0.8) : 0.85 };
+    h.loose = null; if (!h.fetching) h.home = { ...c.me.mark }; this._s = { power: 0.8 + Math.random() * 0.4, id: 'ball' + Math.random(), loose: false, post: false, wall: false, wallAt: null, foe, end: foe ? best - 0.28 : WALL, endY: foe ? (foe.CH.spec.age === 'kid' ? 0.55 : 0.8) : 0.85 };
   },
   events: [
     { t: 0.3, run: (c) => c.sfx.flick() },
     { t: 0.45, run: (c) => c.sfx.windup(c.rate) },
     { t: KICK, run: (c) => { c.sfx.kick(); c.sfx.whirl(c.rate); c.fx.ringAt(c.hero.ball.position, 0.6); c.fx.S.shake = 0.25; } },
-    { t: LAND, run: (c) => c.sfx.bounce() },
-    { t: TRAP, run: (c) => c.sfx.trap() },
+    { t: LAND, run: (c) => { if (!XUANFENG._s.loose) c.sfx.bounce(); } },
+    { t: TRAP, run: (c) => { if (!XUANFENG._s.loose) c.sfx.trap(); } },
   ],
   tick(c) {
     const t = c.t, h = c.hero, f = this._f, Cl = this._C, S = this._s, W2 = (v) => c.toWorld(v); let p, spin = 0, axis = V(1, 0, 0), wind = 0, along = false;
     const tW = KICK + (S.end - Cl.z) / SPEED, topL = Cl.clone().add(V(0, 0.6, -0.05));
+    if (S.loose) { f.G.visible = false; return; } // knocked away: the ball is on its own now
     if (t < 0.3) { p = h.toe(0.2); }
     else if (t < 0.72) { const u = sm((t - 0.3) / 0.42), a = this._from, top = W2(topL); p = a.clone().lerp(top, u); p.y = a.y + (top.y - a.y) * (1 - (1 - u) ** 2); spin = 8; }
     else if (t < KICK) { const u = sm((t - 0.72) / (KICK - 0.72)); p = W2(topL.clone().lerp(Cl, u)); p.x += Math.sin(t * 20) * 0.008; spin = 10 + 50 * u; wind = Math.min(1, (t - 0.45) / 0.5); }
@@ -103,13 +104,17 @@ export const XUANFENG = {
     } else if (t < LAND) { // off whatever it struck, up and back in a high arc
       if (!S.wall) {
         S.wall = true; S.wallAt = V(Cl.x, S.endY, S.end);
-        if (S.foe) S.foe.hit({ power: 1, dir: c.dirWorld(V(0, 0, 1)), at: W2(S.wallAt), fx: 'wind' });
+        if (S.foe) S.foe.hit({ power: S.power, dir: c.dirWorld(V(0, 0, 1)), at: W2(S.wallAt), fx: 'wind' });
         else if (c.targets) { c.targets.blast(W2(V(Cl.x, 0.9, 8.2)), 0.95, c.dirWorld(V(0, 0, 1)), { swirl: 2.5 }); c.sfx.blast(1); c.fx.hitSparks(W2(S.wallAt), c.dirWorld(V(0, 0, -1)), 'wind'); c.fx.ringAt(W2(V(Cl.x, 0, WALL)), 1.2); }
       }
       const L = V(0.12, BALL_R, 0.34 + 0.42), u = (t - tW) / (LAND - tW), a = S.wallAt, pl = a.clone().lerp(L, u); pl.y = a.y + (L.y - a.y) * u + 4 * 2.6 * u * (1 - u); p = W2(pl); spin = 20 * (1 - u) + 6; axis = c.dirWorld(V(1, 0, 0)); wind = Math.max(0, 1 - (t - tW) / 0.35);
     } else if (t < TRAP) { const u = (t - LAND) / (TRAP - LAND), L = W2(V(0.12, BALL_R, 0.76)), to = h.toe(0.05); p = L.lerp(to, u); p.y = BALL_R + 0.18 * Math.sin(Math.PI * u); spin = 5; }
     else { p = h.toe(0.2); spin = Math.max(0, 3 * (1 - (t - TRAP) / 0.3)); }
-    h.ballAt(p); h.spinBall(spin * c.dt, axis);
+    const prev = h.ball.position.clone(); h.ballAt(p); h.spinBall(spin * c.dt, axis);
+    if (t >= KICK && t < tW) { const vel = h.ball.position.clone().sub(prev).divideScalar(Math.max(1e-4, c.dt)); // in flight, it can be met
+      c.projectile({ id: S.id, kind: 'ball', owner: c.me, name: XUANFENG.name, pos: h.ball.position.clone(), vel, r: 0.3, h: 0.3, power: S.power,
+        cancel: (o) => { S.loose = true; const away = o.vel.clone().setY(0).normalize(); h.loose = { v: away.multiplyScalar(o.kind === 'qi' ? 3.2 : 2.2).add(V((Math.random() - 0.5) * 2.2, 4.0 + Math.random() * 1.2, 0)), owner: c.me, spin: 0 }; },
+        weaken: (k) => { S.power = Math.max(0.2, S.power - k); } }); }
     // the whirlwind round the ball: upright while it gathers, laid along the flight after the kick
     f.G.visible = wind > 0.01; f.G.position.copy(h.ball.position);
     const yaw = new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), c.me.mark.yaw), qUp = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));

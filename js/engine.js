@@ -15,6 +15,7 @@ import { CAST } from './cast/index.js';
 import { MOVES } from './moves/index.js';
 import { GESTURES } from './gestures.js';
 import { reactAt, weightOf } from './react.js';
+import { resolve } from './physics.js';
 
 export const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 export const DEF = { armR: -0.2, armL: -0.2, outR: 0, outL: 0, hipR: 0, hipL: 0, tilt: 0, roll: 0, yaw: 0, head: 0, fwd: 0, y: 0, wristR: 0, wristL: 0 };
@@ -39,7 +40,7 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
   const targets = makeTargets(scene), fx = makeFX(scene);
   targets.show(withTargets);
   for (const M of Object.values(MOVES)) M.init?.(scene);
-  const W = { R, scene, camera, comp, stage, targets, fx, fighters: [], clock: 0, slow: 1, freeze: 0, useTargets: withTargets, cam: null };
+  const W = { R, scene, camera, comp, stage, targets, fx, sfx: SFX, fighters: [], clock: 0, slow: 1, freeze: 0, useTargets: withTargets, cam: null, proj: [], _clashed: new Set(), note: null };
 
   // ---------------------------------------------------------------- a fighter
   W.add = (id, mark = {}) => {
@@ -71,7 +72,7 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
     W.fighters.push(f); return f;
   };
   function flash(f) { if (!f._mats) { f._mats = []; f.F.root.traverse((o) => { if (o.material && !Array.isArray(o.material) && o.material.emissive && o.material.emissive.getHex() === 0 && !f._mats.includes(o.material)) f._mats.push(o.material); }); } f._flash = 0.16; }
-  const ctx = (f, mdt) => ({ fx, sfx: SFX, targets: W.useTargets ? targets : null, hero: f.hero, scene, p: f.p, t: f.t, dt: mdt, clock: W.clock, rate: W.slow, V, me: f, foes: W.fighters.filter((g) => g !== f && g.team !== f.team && !(g.react?.kind === 'down')), toWorld: f.toWorld, toLocal: f.toLocal, dirWorld: f.dirWorld,
+  const ctx = (f, mdt) => ({ fx, sfx: SFX, targets: W.useTargets ? targets : null, hero: f.hero, scene, p: f.p, t: f.t, dt: mdt, clock: W.clock, rate: W.slow, V, me: f, foes: W.fighters.filter((g) => g !== f && g.team !== f.team && !(g.react?.kind === 'down')), toWorld: f.toWorld, toLocal: f.toLocal, dirWorld: f.dirWorld, world: W, projectile: (o) => W.proj.push(o),
     peek(t) { const p = f.move ? poseAt(f.move, t) : f.CH.idle(W.clock).pose; apply(f, { ...DEF, ...p }, 0); f.F.root.updateMatrixWorld(true); } });
   function apply(f, p, speed) {
     const w = f.toWorld(V(0, 0, p.fwd)).add(f.push);
@@ -121,6 +122,9 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
       else if (!f.react) f.CH.idleTick?.(c, rest);
       f.lastArm = p.armR; f.lastHip = p.hipR; f._mdt = mdt;
     }
+    // loose things under their own physics, then whatever has met
+    for (const f of W.fighters) f.hero.physics?.(dt * W.slow, W, f);
+    W._dt = dt * W.slow; resolve(W, W.proj); W.proj = [];
     const A = active || { f: W.fighters[0] };
     const h = A.f?.hero, feet = A.f ? A.f.pos.setY(0) : V(), tip = h?.tip ? h.tip.getWorldPosition(V()) : feet.clone().setY(0.5), base = h?.base ? h.base.getWorldPosition(V()) : tip;
     fx.update(A.f?._mdt ?? dt, W.clock, { tip, base, glow: A.glow || 0, gather: A.gather || 0, cutting: !!A.cutting, feet });
@@ -134,7 +138,7 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
   W.place = (c) => { const sh = fx.S.shake * 0.12; camera.position.copy(c.pos).add(V((Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh, 0)); camera.lookAt(c.look); camera.fov = c.fov || 40; camera.updateProjectionMatrix(); };
   W.render = () => comp.render();
   W.resize = (w = innerWidth, h = innerHeight) => { const d = Math.min(2, devicePixelRatio || 1); R.setPixelRatio(d); R.setSize(w, h, false); comp.setPixelRatio(d); comp.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); };
-  W.clear = () => { while (W.fighters.length) W.fighters[0].remove(); fx.reset(); for (const M of Object.values(MOVES)) M.reset?.(); };
+  W.clear = () => { while (W.fighters.length) W.fighters[0].remove(); fx.reset(); W._clashed.clear(); W.proj = []; for (const M of Object.values(MOVES)) M.reset?.(); };
   return W;
 }
 
