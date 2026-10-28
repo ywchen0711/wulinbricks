@@ -1,6 +1,6 @@
 // 奕碩 Yi Shuo, the whirlwind kid: Yi Rui's younger brother, a minifig on short legs. A vermilion jacket crossed over
 // white with gold trim, tied with his brother's indigo sash; indigo trousers bound with white wraps below the knee,
-// white cloth shoes; spiky black hair under a red headband whose ties fly like his brother's. No blade: his weapon is
+// white cloth shoes; a mole above the right corner of his mouth; spiky black hair under a red headband whose ties fly like his brother's. No blade: his weapon is
 // a football, which never leaves him. At rest he keeps it up off his foot, three touches, then lets it rest.
 import * as THREE from '../../lib/three.module.min.js';
 import { makeFig, plastic, rbox } from '../brick/minifig.js';
@@ -16,6 +16,7 @@ export const YISHUO = {
   },
   spec: {
     age: 'kid', cheeks: true,
+    mole: { side: 1, x: 72, y: 160, r: 7 }, // a mole above the right corner of his mouth
     colors: { top: '#d8462a', bottom: '#26335e', shoes: '#f2eee4' },
     outfit: { top: 'robe', bottom: 'pants' },
     robe: { inner: '#f4f0e6', trim: '#f2c23a', belt: '#26335e', tassel: '#3ab08a', ink: 'rgba(255,220,180,0.16)' },
@@ -34,7 +35,7 @@ export const YISHUO = {
     };
   },
   // the ball at rest: on his instep, or in front of his toe
-  idleTick(c, r) { const h = c.hero; if (r.ball.rest) h.ballAt(h.toe(0.2), 0); else h.ballAt(h.instep().add(c.V(0, BALL_R + r.ball.up, 0)), 1); h.spinBall(c.dt * (r.ball.rest ? 0 : 6), c.V(1, 0, 0)); },
+  idleTick(c, r) { const h = c.hero, want = r.ball.rest ? h.toe(0.2) : h.instep().add(c.V(0, BALL_R + r.ball.up, 0)); h.ballAt(h.ball.position.distanceTo(want) > 0.6 ? want : h.ball.position.clone().lerp(want, 1 - Math.exp(-c.dt * 20))); h.spinBall(c.dt * (r.ball.rest ? 0 : 6), c.V(1, 0, 0)); },
 };
 
 function ballTexture() { // white, with black pentagons where the twelve corners of an icosahedron fall, and seams

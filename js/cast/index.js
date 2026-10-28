@@ -3,4 +3,6 @@
 // idleTick(ctx) for what its props do at rest. Kept whole so the films to come can cast them.
 import { YIRUI } from './yirui.js';
 import { YISHUO } from './yishuo.js';
-export const CAST = { yirui: YIRUI, yishuo: YISHUO };
+import { HEIXIONG, DAOBA, SHOUHOU } from './bandits.js';
+export const CAST = { yirui: YIRUI, yishuo: YISHUO, heixiong: HEIXIONG, daoba: DAOBA, shouhou: SHOUHOU };
+export const HEROES = ['yirui', 'yishuo']; // the ones the practice ground shows

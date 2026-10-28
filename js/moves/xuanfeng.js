@@ -77,8 +77,12 @@ export const XUANFENG = {
   ],
   init(scene) { const f = funnel(); f.G.visible = false; scene.add(f.G); this._f = f; },
   reset() { if (this._f) this._f.G.visible = false; },
-  // at the start: where the ball will be met, by posing him at the moment of the kick
-  start(c) { const h = c.hero; c.peek(KICK); const s = h.instep(); this._C = s.add(V(0, BALL_R * 0.9, BALL_R * 0.9)); c.peek(0); this._from = h.toe(0.2); this._s = { post: false, wall: false, wallAt: null, land: null }; },
+  // at the start: where the ball will be met (posing him at the moment of the kick), and whom it is kicked at
+  start(c) {
+    const h = c.hero; c.peek(KICK); this._C = c.toLocal(h.instep()).add(V(0, BALL_R * 0.9, BALL_R * 0.9)); c.peek(0); this._from = h.toe(0.2);
+    let foe = null, best = 1e9; for (const f of c.foes) { const l = c.toLocal(f.pos); if (l.z > 0.8 && Math.abs(l.x) < 1.0 && l.z < best) { best = l.z; foe = f; } }
+    this._s = { post: false, wall: false, wallAt: null, foe, end: foe ? best - 0.28 : WALL, endY: foe ? (foe.CH.spec.age === 'kid' ? 0.55 : 0.8) : 0.85 };
+  },
   events: [
     { t: 0.3, run: (c) => c.sfx.flick() },
     { t: 0.45, run: (c) => c.sfx.windup(c.rate) },
@@ -87,25 +91,29 @@ export const XUANFENG = {
     { t: TRAP, run: (c) => c.sfx.trap() },
   ],
   tick(c) {
-    const t = c.t, h = c.hero, f = this._f, C = this._C, S = this._s; let p, spin = 0, axis = V(1, 0, 0), wind = 0, along = false;
-    const tW = KICK + (WALL - C.z) / SPEED;
+    const t = c.t, h = c.hero, f = this._f, Cl = this._C, S = this._s, W2 = (v) => c.toWorld(v); let p, spin = 0, axis = V(1, 0, 0), wind = 0, along = false;
+    const tW = KICK + (S.end - Cl.z) / SPEED, topL = Cl.clone().add(V(0, 0.6, -0.05));
     if (t < 0.3) { p = h.toe(0.2); }
-    else if (t < 0.72) { const u = sm((t - 0.3) / 0.42), a = this._from, top = C.clone().add(V(0, 0.6, -0.05)); p = a.clone().lerp(top, u); p.y = a.y + (top.y - a.y) * (1 - (1 - u) ** 2); spin = 8; }
-    else if (t < KICK) { const u = sm((t - 0.72) / (KICK - 0.72)), top = C.clone().add(V(0, 0.6, -0.05)); p = top.lerp(C, u); p.x += Math.sin(t * 20) * 0.008; spin = 10 + 50 * u; wind = Math.min(1, (t - 0.45) / 0.5); }
+    else if (t < 0.72) { const u = sm((t - 0.3) / 0.42), a = this._from, top = W2(topL); p = a.clone().lerp(top, u); p.y = a.y + (top.y - a.y) * (1 - (1 - u) ** 2); spin = 8; }
+    else if (t < KICK) { const u = sm((t - 0.72) / (KICK - 0.72)); p = W2(topL.clone().lerp(Cl, u)); p.x += Math.sin(t * 20) * 0.008; spin = 10 + 50 * u; wind = Math.min(1, (t - 0.45) / 0.5); }
     else if (t < tW) { // off along the ground in a drill of wind, curling out and back
-      const u = (t - KICK) / (tW - KICK); p = V(C.x + 0.28 * Math.sin(Math.PI * u), C.y + (0.85 - C.y) * u, C.z + (WALL - C.z) * u); spin = 70; axis = V(0, 0, 1); wind = 1; along = true;
-      if (!S.post && p.z > POST - 0.35) { S.post = true; c.targets.blast(V(p.x, p.y, POST), 0.62, V(0, 0, 1), { column: true, swirl: 3.5 }) && (c.sfx.blast(0.7), c.fx.hitSparks(p, V(0, 0, 1), 'wind')); }
-      c.fx.puff(V(p.x + (Math.random() - 0.5) * 0.2, 0.05, p.z - 0.2), V((Math.random() - 0.5) * 2, 0.6 + Math.random(), -1.5), 0.6, [0.55, 0.5, 0.42], 1.5, 2);
-    } else if (t < LAND) { // off the wall, up and back in a high arc
-      if (!S.wall) { S.wall = true; S.wallAt = V(C.x, 0.85, WALL); c.targets.blast(V(C.x, 0.9, 8.2), 0.95, V(0, 0, 1), { swirl: 2.5 }); c.sfx.blast(1); c.fx.hitSparks(S.wallAt, V(0, 0, -1), 'wind'); c.fx.ringAt(V(C.x, 0, WALL), 1.2); }
-      const L = V(0.12, BALL_R, 0.34 + 0.42), u = (t - tW) / (LAND - tW), a = S.wallAt; p = a.clone().lerp(L, u); p.y = a.y + (L.y - a.y) * u + 4 * 2.6 * u * (1 - u); spin = 20 * (1 - u) + 6; axis = V(1, 0, 0); wind = Math.max(0, 1 - (t - tW) / 0.35);
-    } else if (t < TRAP) { const u = (t - LAND) / (TRAP - LAND), L = V(0.12, BALL_R, 0.76), to = h.toe(0.05); p = L.lerp(to, u); p.y = BALL_R + 0.18 * Math.sin(Math.PI * u); spin = 5; }
+      const u = (t - KICK) / (tW - KICK), pl = V(Cl.x + 0.28 * Math.sin(Math.PI * u), Cl.y + (S.endY - Cl.y) * u, Cl.z + (S.end - Cl.z) * u); p = W2(pl); spin = 70; axis = c.dirWorld(V(0, 0, 1)); wind = 1; along = true;
+      if (c.targets && !S.post && pl.z > POST - 0.35) { S.post = true; if (c.targets.blast(W2(V(pl.x, pl.y, POST)), 0.62, c.dirWorld(V(0, 0, 1)), { column: true, swirl: 3.5 })) { c.sfx.blast(0.7); c.fx.hitSparks(p, c.dirWorld(V(0, 0, 1)), 'wind'); } }
+      c.fx.puff(W2(V(pl.x + (Math.random() - 0.5) * 0.2, 0.05, pl.z - 0.2)), c.dirWorld(V((Math.random() - 0.5) * 2, 0.6 + Math.random(), -1.5)), 0.6, [0.55, 0.5, 0.42], 1.5, 2);
+    } else if (t < LAND) { // off whatever it struck, up and back in a high arc
+      if (!S.wall) {
+        S.wall = true; S.wallAt = V(Cl.x, S.endY, S.end);
+        if (S.foe) S.foe.hit({ power: 1, dir: c.dirWorld(V(0, 0, 1)), at: W2(S.wallAt), fx: 'wind' });
+        else if (c.targets) { c.targets.blast(W2(V(Cl.x, 0.9, 8.2)), 0.95, c.dirWorld(V(0, 0, 1)), { swirl: 2.5 }); c.sfx.blast(1); c.fx.hitSparks(W2(S.wallAt), c.dirWorld(V(0, 0, -1)), 'wind'); c.fx.ringAt(W2(V(Cl.x, 0, WALL)), 1.2); }
+      }
+      const L = V(0.12, BALL_R, 0.34 + 0.42), u = (t - tW) / (LAND - tW), a = S.wallAt, pl = a.clone().lerp(L, u); pl.y = a.y + (L.y - a.y) * u + 4 * 2.6 * u * (1 - u); p = W2(pl); spin = 20 * (1 - u) + 6; axis = c.dirWorld(V(1, 0, 0)); wind = Math.max(0, 1 - (t - tW) / 0.35);
+    } else if (t < TRAP) { const u = (t - LAND) / (TRAP - LAND), L = W2(V(0.12, BALL_R, 0.76)), to = h.toe(0.05); p = L.lerp(to, u); p.y = BALL_R + 0.18 * Math.sin(Math.PI * u); spin = 5; }
     else { p = h.toe(0.2); spin = Math.max(0, 3 * (1 - (t - TRAP) / 0.3)); }
     h.ballAt(p); h.spinBall(spin * c.dt, axis);
     // the whirlwind round the ball: upright while it gathers, laid along the flight after the kick
     f.G.visible = wind > 0.01; f.G.position.copy(h.ball.position);
-    const qUp = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)), qAlong = new THREE.Quaternion();
-    f.G.quaternion.copy(along ? qAlong : qUp); f.mesh.rotation.z += c.dt * (along ? 30 : 14); f.m.uniforms.uT.value = c.clock; f.m.uniforms.uA.value = wind;
+    const yaw = new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), c.me.mark.yaw), qUp = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
+    f.G.quaternion.copy(along ? yaw : yaw.multiply(qUp)); f.mesh.rotation.z += c.dt * (along ? 30 : 14); f.m.uniforms.uT.value = c.clock; f.m.uniforms.uA.value = wind;
     f.G.scale.setScalar(along ? 1 : 0.85 + 0.45 * wind); f.halo.material.opacity = wind * 0.35;
     if (wind > 0 && !along) for (let i = 0; i < 2; i++) { const a = Math.random() * 6.28, r = 0.9 + Math.random() * 0.6, q = V(p.x + Math.cos(a) * r, 0.05 + Math.random() * 0.5, p.z + Math.sin(a) * r); c.fx.puff(q, V(-Math.sin(a) * 2.5, 0.8, Math.cos(a) * 2.5).add(p.clone().sub(q).multiplyScalar(1.2)), 0.6, Math.random() < 0.5 ? [0.35, 0.8, 0.4] : [0.8, 1.0, 0.9], 0.5, 0); }
   },

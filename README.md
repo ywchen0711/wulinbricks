@@ -3,7 +3,11 @@
 The people of the martial world as brick minifigures, one at a time, each with their moves. Each one stands on a
 practice ground at dusk, where you can watch their moves performed in 3D.
 
-**Live:** https://ywchen0711.github.io/wulinbricks/
+**Live:** https://ywchen0711.github.io/wulinbricks/ · **Episode 1:** https://ywchen0711.github.io/wulinbricks/film.html
+
+The page has three modes. **Practice** shows one character on the practice ground, trying moves on a post and a
+wall. **Duel** puts the brothers face to face to spar, with buttons to try a light hit, a heavy hit or a knockdown
+on either, and an auto-sparring loop. **Story** plays the films.
 
 ## 奕叡 Yi Rui · 啟程刀客 The Departing Blade
 
@@ -30,6 +34,29 @@ flies back in a high arc, and he traps it under his foot.
 **Controls:** the move button, Space or 1 performs it, and Tab or the tabs at the top switch the character. Drag to look around, use the wheel or pinch to zoom, and
 double-click (or C) to get the auto camera back. S toggles slow motion, R resets the targets.
 
+## 黑風寨 The Black Wind gang
+
+They are the villains of episode 1. 黑熊 Black Bear is the bearded chief with a wooden club. 刀疤 Scar is the second,
+with a scar across his eye and a broadsword. 瘦猴 Skinny Monkey is the quick lackey. Their moves are 重拳 Heavy
+Punch and 掄棍 Club Swing.
+
+## 第一集 奕碩遇險 Episode 1: Yi Shuo in Trouble
+
+At dusk, outside the village, Yi Shuo is playing ball when the Black Wind come and want it. His Whirlwind Ball
+knocks Skinny Monkey flat, but Scar's fist and Black Bear's club put him on the ground. As the club goes up again,
+Yi Rui arrives, and his One Cut to Set Out knocks all three down; they run. The episode has subtitles in Chinese
+and English (no recorded voices yet). Drag the picture to look around while it plays.
+
+## Taking a blow
+
+`js/react.js` decides how a figure takes a hit:
+
+- **light:** a flinch, eyes shut, a half step back;
+- **heavy:** thrown back, arms flung out, staggering, then walking back to his mark;
+- **down:** thrown through the air, flat on his back and dazed, then up in one spring (鯉魚打挺) and back to his mark.
+
+A film can hold someone down until a cue releases him.
+
 ## How it is made
 
 | File | What it holds |
@@ -39,6 +66,9 @@ double-click (or C) to get the auto camera back. S toggles slow motion, R resets
 | `js/moves/*.js` | a move: key poses and their easing, events at moments, a per-frame `tick`, the face, a camera; listed in `js/moves/index.js` |
 | `js/fx.js` | the effects: the crescent of sword qi, the blade's trail, sparks, wind, rings, the cut in the floor |
 | `js/targets.js` | the post and the wall, every brick its own piece so a cut can split it |
+| `js/engine.js` | the world: fighters with marks, walking, turning, gestures, moves, blows, the camera |
+| `js/react.js`, `js/gestures.js` | taking a blow; small actions for films (point, raise, cower, cheer...) |
+| `js/films/*.js`, `js/film.js` | an episode (cast and marks, lines, cues, shots) and its player |
 | `js/stage.js` | the practice ground at dusk |
 | `js/sound.js` | the move's synthesised sounds |
 

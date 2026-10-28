@@ -18,10 +18,15 @@ export const YIDAO = {
   events: [
     { t: 0.3, run: (c) => c.sfx.gather(c.rate) },
     { t: 1.04, run: (c) => c.sfx.cut(c.rate) },
-    { t: 1.17, run: (c) => { c.sfx.launch(c.rate); c.fx.launch(c.V(0, 0.95, c.p.fwd + 0.95), c.V(0, 0, 1)); } },
+    { t: 1.17, run: (c) => { c.sfx.launch(c.rate); c.fx.launch(c.toWorld(c.V(0, 0.95, c.p.fwd + 0.95)), c.dirWorld(c.V(0, 0, 1))); c.fx.S.wave.hitList = []; } },
   ],
   // every frame: the crescent splits what it runs through
-  tick(c) { const W = c.fx.S.wave; if (W && W.age < 1.5) c.targets.cut(W.p.x, W.p.z, W.d, 99, () => { c.sfx.hit(); c.fx.hitSparks(W.p, W.d); }); },
+  tick(c) {
+    const W = c.fx.S.wave; if (!W || W.age >= 1.5) return;
+    if (c.targets) c.targets.cut(W.p.x, W.p.z, W.d, 99, () => { c.sfx.hit(); c.fx.hitSparks(W.p, W.d); });
+    // anyone standing in its path is struck and thrown down, one after another as it reaches them
+    const w = c.toLocal(W.p); for (const f of c.foes) { if (W.hitList?.includes(f)) continue; const l = c.toLocal(f.pos); if (w.z >= l.z - 0.2 && w.z < l.z + 0.6 && Math.abs(w.x - l.x) < 0.6) { (W.hitList ||= []).push(f); f.hit({ power: 1, dir: W.d, at: f.pos.add(c.V(0, 0.85, 0)) }); c.sfx.hit(0.6); } }
+  },
   keys: [
     { t: 0.00, p: { armR: -0.55, outR: 0.12, armL: -0.95, outL: -0.25, hipR: -0.3, hipL: 0.25, tilt: 0.04, yaw: 0.35, head: -0.3 } },
     { t: 0.38, p: { armR: 0.15, outR: 0.3, armL: -1.35, outL: -0.6, hipR: -0.2, hipL: 0.35, tilt: -0.04, yaw: 0.65, head: -0.6, fwd: -0.18, y: -0.04, wristR: 0.3 } },

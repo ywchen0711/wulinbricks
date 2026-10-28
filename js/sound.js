@@ -1,18 +1,26 @@
 // The sounds of a move, synthesised: the qi gathering (a rising hum and wind), the cut (a hiss of steel), the crescent
 // leaving (a deep thump and a ringing), its flight (a tearing whoosh), and bricks split and falling (cracks, clatter).
-let ac = null, out = null;
+let ac = null, out = null, muted = false;
+export const mute = (b) => { muted = b; };
 export function wake() { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.gain.value = 0.5; const c = ac.createDynamicsCompressor(); out.connect(c).connect(ac.destination); } if (ac.state === 'suspended') ac.resume(); }
 const now = () => ac.currentTime;
 function noise(dur, { at = 0, f0 = 800, f1 = 800, q = 1, vol = 0.4, type = 'bandpass', a = 0.01 } = {}) {
+  if (muted) return;
   const t = now() + at, n = Math.ceil(ac.sampleRate * dur), b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
   const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = b; f.type = type; f.Q.value = q; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + dur);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.connect(f).connect(g).connect(out); s.start(t); s.stop(t + dur + 0.05);
 }
 function tone(f0, f1, dur, { at = 0, vol = 0.3, type = 'sine', a = 0.01 } = {}) {
+  if (muted) return;
   const t = now() + at, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g).connect(out); o.start(t); o.stop(t + dur + 0.05);
 }
 export const SFX = {
+  thud(k = 1) { if (!ac) return; tone(120, 55, 0.18, { vol: 0.6 * k }); noise(0.1, { f0: 1500, f1: 400, q: 0.8, vol: 0.4 * k, type: 'lowpass' }); },
+  // a cry, by mouth: a voiced glide through a vowel-ish filter (higher for a kid)
+  ouch(kid = false, kind = 'light') { if (!ac || muted) return; const f = kid ? 520 : 300, d = kind === 'down' ? 0.45 : 0.25, t = now(); const o = ac.createOscillator(), b = ac.createBiquadFilter(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f * 1.3, t); o.frequency.exponentialRampToValueAtTime(f * 0.7, t + d); b.type = 'bandpass'; b.frequency.value = kid ? 1400 : 900; b.Q.value = 3; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(b).connect(g).connect(out); o.start(t); o.stop(t + d + 0.05); },
+  swing(k = 1) { if (!ac) return; noise(0.2, { f0: 2500, f1: 500, q: 1.2, vol: 0.35 * k }); },
+  talk(kid = false) { if (!ac) return; const f = (kid ? 380 : 220) * (0.85 + Math.random() * 0.3); tone(f, f * 0.9, 0.07, { vol: 0.05, type: 'triangle' }); },
   flick() { if (!ac) return; tone(260, 420, 0.12, { vol: 0.35, type: 'triangle' }); noise(0.05, { f0: 1500, f1: 900, q: 2, vol: 0.2 }); },
   windup(rate = 1) { if (!ac) return; const k = 1 / rate; noise(0.75 * k, { f0: 250, f1: 2200, q: 3, vol: 0.28, a: 0.5 * k }); noise(0.75 * k, { f0: 600, f1: 3200, q: 6, vol: 0.12, a: 0.6 * k }); },
   kick() { if (!ac) return; tone(150, 45, 0.25, { vol: 0.9 }); noise(0.08, { f0: 2500, f1: 600, q: 0.8, vol: 0.5, type: 'lowpass' }); },

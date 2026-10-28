@@ -74,5 +74,5 @@ export function makeTargets(scene) {
       if (f.m.position.y < 0.02) { f.m.position.y = 0.02; f.v.y = Math.abs(f.v.y) * 0.28; f.v.x *= 0.6; f.v.z *= 0.6; f.w.multiplyScalar(0.55); if (Math.abs(f.v.y) < 0.4 && f.v.length() < 0.5) { f.rest = true; f.m.rotation.x = Math.round(f.m.rotation.x / (Math.PI / 2)) * Math.PI / 2; f.m.rotation.z = Math.round(f.m.rotation.z / (Math.PI / 2)) * Math.PI / 2; } }
     }
   }
-  return { build, cut, blast, update, get broken() { return flying.length > 0; } };
+  return { build, cut, blast, update, show(b) { G.visible = b; if (!b) { for (const p of flying) G.remove(p.m); flying = []; } }, get broken() { return flying.length > 0; } };
 }
