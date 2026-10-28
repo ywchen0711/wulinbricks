@@ -64,7 +64,7 @@ function overlays() {
   const ti = $('title'), tk = Math.max(0, Math.min(1, (t - 0.3) * 2, (2.4 - t) * 2)); ti.style.opacity = tk; ti.innerHTML = `<small>${EP.title[lang][0]}</small>${EP.title[lang][1]}`;
   const ek = Math.max(0, Math.min(1, (t - (EP.len - 4)) * 1.5)); $('end').style.opacity = ek; $('end').textContent = EP.end[lang];
   $('fade').style.opacity = Math.max(0, 1 - t / 0.8, (t - (EP.len - 1.2)) / 1.2);
-  $('bar').value = t / EP.len; $('time').textContent = `${fmt(t)} / ${fmt(EP.len)}`;
+  $('scrub').value = t / EP.len; $('time').textContent = `${fmt(t)} / ${fmt(EP.len)}`;
 }
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
@@ -73,7 +73,7 @@ function play() { wake(); if (S.t >= EP.len - 0.05) seek(0); S.playing = true; $
 function pause() { S.playing = false; $('pp').textContent = '▶'; }
 $('go').onclick = play;
 $('pp').onclick = () => (S.playing ? pause() : play());
-$('bar').onchange = (e) => { seek(+e.target.value * EP.len); };
+$('scrub').onchange = (e) => { seek(+e.target.value * EP.len); };
 $('lang').onclick = () => { lang = lang === 'zh' ? 'en' : 'zh'; texts(); };
 $('cam').onclick = () => { O.on = false; $('cam').hidden = true; };
 cv.addEventListener('dblclick', () => $('cam').click());

@@ -76,7 +76,7 @@ export const EP1 = {
     [70.6, (A) => { A.shuo.gest('laugh', { len: 2 }); A.shuo.faceTo({ x: 0, z: 3 }); }],
   ],
   shots: [
-    [0, { kind: 'at', pos: [4.2, 1.9, -3.4], look: [0, 0.5, 1.2], fov: 42, drift: 0.08 }],
+    [0, { kind: 'at', pos: [-1.4, 1.7, -4.2], look: [0, 0.5, 1.2], fov: 42, drift: -0.08 }],
     [2.4, { kind: 'close', on: 'shuo', side: 1, dist: 1.6 }],
     [6.0, { kind: 'over', from: 'shuo', to: 'bear', dist: 1.9 }],
     [10.6, { kind: 'wide', on: ['shuo', 'bear', 'scar', 'monkey'], side: 1, dist: 4.6 }],

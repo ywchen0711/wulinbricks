@@ -12,5 +12,6 @@
 #back { color: #9ad8ff; font-size: 14px; }
 #ctl { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 10px; align-items: center; padding: 10px 16px; background: linear-gradient(transparent, rgba(0,0,0,.6)); z-index: 4; }
 #ctl button { border: 0; background: rgba(255,255,255,.16); color: #fff; border-radius: 8px; padding: 6px 12px; font: inherit; cursor: pointer; }
-#bar { flex: 1; accent-color: #6aa8ff; }
+#scrub { flex: 1; accent-color: #6aa8ff; }
 #time { font-variant-numeric: tabular-nums; font-size: 13px; color: #d8d4cc; }
+#start[hidden], #cam[hidden] { display: none; }
