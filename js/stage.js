@@ -5,6 +5,7 @@
 import * as THREE from '../lib/three.module.min.js';
 import { kit, P, BH, PH } from './brick/bricks.js';
 import { buildSets } from './sets.js';
+import { decorateRoad } from './decor.js';
 
 const rng = (s) => () => ((s = (s * 16807) % 2147483647) / 2147483647);
 export const TIMES = {
@@ -48,6 +49,7 @@ export function buildStage(scene, R) {
   for (let k = 0; k < 22; k++) { const x = (Rn() - 0.5) * 18, z = -4 + Rn() * 18; if (Math.abs(x) < 2.4) continue; K.slope(x, 0, z, 2, 2, '#6a6a64', Rn() * 6.3); if (Rn() < 0.5) K.brick(x + 0.3, 0, z + 0.2, 2, 2, 'brick', '#5a5a56'); }
   // far mountains: stacked slopes and bricks, dark against the dusk
   for (let k = 0; k < 9; k++) { const x = -30 + k * 7.5 + (Rn() - 0.5) * 3, z = 34 + Rn() * 8, h = 6 + Rn() * 7; for (let y = 0, w = 16; y < h && w >= 2; y += BH * 3, w -= 2) for (let i = -w / 2; i < w / 2; i += 2) K.brick(x + i * P * 3, y, z, 6, 6, 'tall', '#3a3550'); }
+  decorateRoad(K, G);
   K.done();
   const sets = buildSets(scene);
   const st = { sky: sk, sun, hemi, fill, sets, tod: 'dusk', at: new THREE.Vector3(0, 0, 4),

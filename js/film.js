@@ -5,6 +5,7 @@
 // they are. A cue can raise a character's entrance card (name, title, four-line poem, the world slowed), call out a
 // move's name, or slow the world for a strike. Seeking replays from the start of the scene, silently.
 //   film.html?ep=ep1&t=120&lang=en; window.FILM for tests.
+import * as THREE from '../lib/three.module.min.js';
 import { createWorld, orbit, V } from './engine.js';
 import { wake, mute, SFX, audio } from './sound.js';
 import { CAST } from './cast/index.js';
@@ -17,7 +18,7 @@ const EPS = { ep1: EP1, proto: PROTO };
 const $ = (id) => document.getElementById(id), q = new URLSearchParams(location.search);
 let lang = q.get('lang') === 'en' ? 'en' : 'zh';
 const EP = EPS[q.get('ep')] || EP1;
-const cv = $('cv'), W = createWorld(cv, { targets: false }), O = orbit(cv, () => { $('cam').hidden = false; });
+const cv = $('cv'), W = createWorld(cv, { targets: false, dof: true }), O = orbit(cv, () => { $('cam').hidden = false; });
 const props = propShelf(W.scene);
 const S = { t: 0, playing: false, cue: 0, A: {}, shot: -1, cam: null, scene: -1, sim: false, voice: null, buffers: {}, heard: new Set(), src: null, intro: null, callout: null, slowmo: null, title: null, caption: null };
 const scenes = EP.scenes;
@@ -54,12 +55,13 @@ function enterScene(i) {
   props.clear(); W.fx.reset();
   for (const [name, f] of Object.entries(S.A)) {
     const pl = sc.place?.[name];
-    f.move = null; f.react = null; f.walk = null; f.gesture = null; f.push.set(0, 0, 0); f.mood = null; f.still = false; f.stayDown = false; f.yawTo = null; if (f.hero.loose) f.hero.loose = null;
+    f.move = null; f.react = null; f.walk = null; f.gesture = null; f.push.set(0, 0, 0); f.mood = null; f.still = false; f.stayDown = false; f.yawTo = null; f.attend = null; f.lookLock = false; f.feel = null; f.act = null; if (f.hero.loose) f.hero.loose = null;
     if (!pl) { f.show(false); f.mark.x = O0.x; f.mark.z = O0.z - 999; continue; }
     f.show(pl.show !== false); f.mark.x = O0.x + pl.x; f.mark.z = O0.z + pl.z; f.mark.y = pl.y || 0; f.mark.yaw = pl.yaw ?? 0;
     if (pl.gest) f.gest(pl.gest, { hold: true });
   }
   for (const [name, pl] of Object.entries(sc.place || {})) if (pl.faceTo) F.face(name, pl.faceTo, true);
+  S.lastSpeaker = null; S.lastLine = -1;
   sc.setup?.(S.A, F);
   S.caption = sc.caption ? { text: sc.caption, t0: sc.t } : null;
   if (!S.sim && S.playing) SFX.ambience(sc.ambience || null);
@@ -82,14 +84,32 @@ function speak(i, offset) { // play a line's recording from where the film is in
   buffer(i).then((b) => { if (!b || !S.playing) return; const { ac, out } = audio(); const s = ac.createBufferSource(); s.buffer = b; s.connect(out); s.start(0, Math.max(0, offset)); S.src = s; });
 }
 
+// who looks at whom while a line is spoken: those near the speaker turn to him; he turns to whoever he answers (the
+// last to speak to him), or the nearest; a cue can fix someone's gaze (F.look); a shout or a cry makes the others start
+function attention(li) {
+  const L = EP.lines[li], spk = S.A[L[1]]; if (!spk || spk.hidden) return;
+  const near = Object.values(S.A).filter((f) => f !== spk && !f.hidden && f.pos.distanceTo(spk.pos) < 9);
+  if (S.lastLine !== li) {
+    S.lastLine = li;
+    if (['shout', 'surprised', 'scared', 'angry'].includes(L[4])) for (const f of near) if (f.pos.distanceTo(spk.pos) < 5 && f.act) f.act.startle = 1;
+    const prev = S.lastSpeaker && S.lastSpeaker !== spk && !S.lastSpeaker.hidden ? S.lastSpeaker : null;
+    spk.addressee = prev && prev.pos.distanceTo(spk.pos) < 9 ? prev : near.sort((a, b) => a.pos.distanceTo(spk.pos) - b.pos.distanceTo(spk.pos))[0] || null;
+    S.lastSpeaker = spk;
+  }
+  for (const f of near) if (!f.lookLock) f.attend = spk;
+  if (!spk.lookLock) spk.attend = spk.addressee;
+}
+F.look = (name, what) => { const f = S.A[name]; if (!f) return; if (what == null) { f.lookLock = false; f.attend = null; return; } f.lookLock = true; f.attend = typeof what === 'string' ? S.A[what] : V(origin().x + what[0], 1, origin().z + what[1]); };
 // ---------------------------------------------------------------- time passing
 function advance(dt) {
   S.t += dt;
   const si = sceneAt(S.t); if (si !== S.scene) enterScene(si);
   while (S.cue < EP.cues.length && EP.cues[S.cue][0] <= S.t) { const [ct, fn] = EP.cues[S.cue]; if (ct >= scenes[S.scene].t) fn(S.A, F); S.cue++; }
   const li = lineAt(S.t);
-  for (const f of Object.values(S.A)) f.talk = 0;
+  for (const f of Object.values(S.A)) { f.talk = 0; if (f.feelUntil && S.t > f.feelUntil) { f.feel = null; f.feelUntil = 0; } }
+  if (li >= 0) attention(li);
   if (li >= 0) { const L = EP.lines[li], f = S.A[L[1]], v = S.voice?.lines?.[li], k = S.t - L[0];
+    if (f) { f.feel = L[4] || 'calm'; f.feelUntil = L[0] + durOf(li) + 1.5; }
     if (f) f.talk = v?.env ? (v.env[Math.floor(k * 30)] ?? 0) / 100 : (k < durOf(li) ? 1 : 0);
     if (!S.sim && S.playing && !S.heard.has(li) && k < durOf(li)) { S.heard.add(li); if (S.voice) speak(li, k); else SFX.talk(f?.CH.spec.age === 'kid'); }
   }
@@ -112,21 +132,48 @@ function seek(t) {
 // ---------------------------------------------------------------- the shots, framed on the actors where they are
 const head = (f) => f.F.headP.getWorldPosition(V()).add(V(0, 0.15 * f.F.height / 1.5, 0));
 const facing = (f) => V(Math.sin(f.mark.yaw), 0, Math.cos(f.mark.yaw));
+const faceDir = (f) => { const q = f.F.headP.getWorldQuaternion(new THREE.Quaternion()), d = V(0, 0, 1).applyQuaternion(q).setY(0); return d.lengthSq() > 1e-4 ? d.normalize() : facing(f); }; // where his face is turned
 const rot = (v, a) => v.clone().applyAxisAngle(V(0, 1, 0), a);
 const local = (a) => V(origin().x + a[0], a[1], origin().z + a[2]);
+const lens = (fov) => Math.tan(17 * Math.PI / 180) / Math.tan(fov / 2 * Math.PI / 180); // how much further back a longer lens stands, for the same framing
+// set the subject off-centre, with room on the side he looks toward
+function compose(c, subj, dir, k = 0.28) {
+  const fwd = c.look.clone().sub(c.pos).normalize(), right = V().crossVectors(fwd, V(0, 1, 0)).normalize(), half = c.look.distanceTo(c.pos) * Math.tan((c.fov / 2) * Math.PI / 180) * (W.camera.aspect || 1.78);
+  const side = Math.sign(dir.dot(right)) || 1; c.look.addScaledVector(right, side * k * half * 0.5); return c;
+}
 function frameShot(s, t0) {
   const A = S.A, dt = S.t - t0;
   if (s.kind === 'at') { const look = s.follow ? head(A[s.follow]) : local(s.look); return { pos: local(s.pos).add(V(...(s.drift || [0, 0, 0])).multiplyScalar(dt)), look, fov: s.fov || 42 }; }
   if (s.kind === 'move') { const f = A[s.on]; if (f.move) return W.moveCam(f); return frameShot({ kind: 'close', on: s.on, side: 1, dist: 2.0 }, t0); }
-  if (s.kind === 'close' && A[s.on].react?.kind === 'down' && A[s.on].react.t > 0.6) { const f = A[s.on], h = head(f), side = rot(facing(f), (s.side || 1) * 1.2); return { pos: h.clone().add(V(0, 1.05, 0)).addScaledVector(side, 0.7), look: h.clone(), fov: 36 }; }
-  if (s.kind === 'close') { const f = A[s.on], h = head(f), fw = facing(f), push = s.push ? 1 - Math.min(0.35, dt * s.push) : 1, d = ((s.dist || 1.7) * f.F.height / 1.5 + 0.4) * push; const pos = h.clone().addScaledVector(rot(fw, (s.side || 1) * (s.angle ?? 0.55)), d).add(V(0, s.low ? 0.55 : s.up ?? 0.05, 0)); return { pos, look: h.clone().add(V(0, -0.08 - (s.down || 0), 0)), fov: s.fov || 34 }; }
-  if (s.kind === 'over') { const a = head(A[s.from]), b = head(A[s.to]), ax = a.clone().sub(b).setY(0).normalize(), perp = V(ax.z, 0, -ax.x).multiplyScalar(s.side || 1); return { pos: a.clone().addScaledVector(ax, (s.dist || 1.8) * 1.0).addScaledVector(perp, 0.95).add(V(0, 0.05, 0)), look: b.clone().add(V(0, -0.12, 0)), fov: 36 }; }
-  if (s.kind === 'prop') { const it = props.items[s.on], p = it?.G.position.clone() || V(); if (it?.held) { const f = it.held.f, fw = facing(f), sd = V(fw.z, 0, -fw.x); return { pos: p.clone().addScaledVector(fw, s.above ? 0.5 : 0.75).addScaledVector(sd, 0.25).add(V(0, s.above ? 0.55 : 0.12, 0)), look: p.clone().add(V(0, 0.03, 0)), fov: s.fov || 32 }; } return { pos: p.clone().add(V(...(s.off || [0.35, 0.25, 0.45]))), look: p, fov: s.fov || 30 }; }
+  if (s.kind === 'close' && A[s.on].react?.kind === 'down' && A[s.on].react.t > 0.6) { const f = A[s.on], h = head(f), side = rot(facing(f), (s.side || 1) * 1.2); return { pos: h.clone().add(V(0, 1.25, 0)).addScaledVector(side, 0.8), look: h.clone(), fov: 30, subject: h }; }
+  if (s.kind === 'close') {
+    const f = A[s.on], h = head(f), fw = faceDir(f), fov = s.fov || 25, push = s.push ?? 0.015, d = ((s.dist || 1.7) * f.F.height / 1.5 + 0.4) * lens(fov) * (1 - Math.min(0.3, dt * push));
+    const pos = h.clone().addScaledVector(rot(fw, (s.side || 1) * (s.angle ?? 0.5)), d).add(V(0, s.low ? 0.5 : s.up ?? 0.06 * lens(fov), 0));
+    return compose({ pos, look: h.clone().add(V(0, -0.1 - (s.down || 0), 0)), fov, subject: h }, f, fw);
+  }
+  if (s.kind === 'over' || s.kind === 'talk') {
+    // over the shoulder of whoever listens, onto whoever speaks; a talk shot follows the lines between the people in it
+    let spk = A[s.to], lis = A[s.from];
+    if (s.kind === 'talk') {
+      const li = lineAt(S.t), who = li >= 0 ? EP.lines[li][1] : null;
+      if (who && s.on.includes(who)) S.talkLast = who; const sp = s.on.includes(S.talkLast) ? S.talkLast : s.on[0];
+      spk = A[sp]; const ad = spk.addressee && s.on.includes(spk.addressee.name) ? spk.addressee.name : s.on.find((n) => n !== sp); lis = A[ad];
+    }
+    const a = head(lis), b = head(spk), ax = a.clone().sub(b).setY(0).normalize(), fov = s.fov || 30, k = lens(fov) * 0.85;
+    // keep to one side of the line between the two (the 180° rule)
+    const base = head(A[(s.on || [s.from, s.to])[1]]).sub(head(A[(s.on || [s.from, s.to])[0]])).setY(0).normalize(), P0 = V(base.z, 0, -base.x).multiplyScalar(s.side || 1);
+    let perp = V(ax.z, 0, -ax.x); if (perp.dot(P0) < 0) perp.multiplyScalar(-1);
+    const pos = a.clone().addScaledVector(ax, (s.dist || 1.0) * k).addScaledVector(perp, 0.42 * k).add(V(0, 0.08, 0));
+    return compose({ pos, look: b.clone().add(V(0, -0.1, 0)), fov, subject: b, key: spk.name }, spk, faceDir(spk), 0.22);
+  }
+  if (s.kind === 'prop') { const it = props.items[s.on], p = it?.G.position.clone() || V(); if (it?.held) { const f = it.held.f, fw = facing(f), sd = V(fw.z, 0, -fw.x); return { pos: p.clone().addScaledVector(fw, s.above ? 0.5 : 0.75).addScaledVector(sd, 0.25).add(V(0, s.above ? 0.55 : 0.12, 0)), look: p.clone().add(V(0, 0.03, 0)), fov: s.fov || 32, subject: p }; } return { pos: p.clone().add(V(...(s.off || [0.35, 0.25, 0.45]))), look: p, fov: s.fov || 30, subject: p }; }
   const ids = s.on, hs = ids.map((n) => head(A[n])), c = hs.reduce((m, v) => m.add(v), V()).divideScalar(hs.length);
   const ax = hs[1].clone().sub(hs[0]).setY(0); if (ax.lengthSq() < 1e-4) ax.set(1, 0, 0); ax.normalize(); const perp = V(ax.z, 0, -ax.x).multiplyScalar(s.side || 1);
-  const span = Math.max(...hs.map((h) => h.distanceTo(c))) * 2, d = s.dist || span * 1.1 + 1.8;
-  return { pos: c.clone().addScaledVector(perp, d).add(V(0, s.high ? 2.4 : s.kind === 'two' ? 0.3 : 0.9, 0)).add(V(...(s.drift || [0, 0, 0])).multiplyScalar(dt)), look: c.clone().add(V(0, -0.25, 0)), fov: s.kind === 'two' ? 36 : 42 };
+  const span = Math.max(...hs.map((h) => h.distanceTo(c))) * 2, fov = s.fov || (s.kind === 'two' ? 30 : 36), d = (s.dist || span * 1.1 + 1.8) * (s.kind === 'two' ? lens(fov) * 0.9 : lens(fov) * 0.85);
+  return { pos: c.clone().addScaledVector(perp, d).add(V(0, s.high ? 2.4 : s.kind === 'two' ? 0.35 : 0.9, 0)).add(V(...(s.drift || [0, 0, 0])).multiplyScalar(dt)), look: c.clone().add(V(0, -0.25, 0)), fov, subject: c };
 }
+// a hand-held breath on every shot
+function handheld(c) { const t = S.t, d = c.pos.distanceTo(c.look); c.pos.add(V(Math.sin(t * 0.9) * 0.6 + Math.sin(t * 2.3) * 0.3, Math.sin(t * 1.3 + 1) * 0.5, Math.sin(t * 0.7 + 2) * 0.4).multiplyScalar(0.006 * d)); c.look.add(V(Math.sin(t * 1.1 + 3), Math.sin(t * 0.8 + 4) * 0.6, 0).multiplyScalar(0.003 * d)); return c; }
 // anyone standing between the lens and the face it is on is left out of this frame
 function clearFaces(c) {
   const out = [], seg = c.look.clone().sub(c.pos), L = seg.length(); seg.normalize();
@@ -141,10 +188,14 @@ function clearFaces(c) {
 }
 function camera() {
   let i = 0; while (i < EP.shots.length - 1 && EP.shots[i + 1][0] <= S.t) i++;
-  const [t0, s] = EP.shots[i], c = frameShot(s, t0);
-  if (S.shot !== i || !S.cam) { S.shot = i; S.cam = { pos: c.pos.clone(), look: c.look.clone(), fov: c.fov }; }
-  else { const k = s.kind === 'move' ? 1 : s.ease ?? 0.12; S.cam.pos.lerp(c.pos, k); S.cam.look.lerp(c.look, k); S.cam.fov += (c.fov - S.cam.fov) * k; }
-  return S.cam;
+  const [t0, s] = EP.shots[i], c = frameShot(s, t0), key = i + ':' + (c.key || '');
+  if (S.shot !== key || !S.cam) { S.shot = key; S.cam = { pos: c.pos.clone(), look: c.look.clone(), fov: c.fov, subject: c.subject }; }
+  else { const k = s.kind === 'move' ? 1 : s.ease ?? 0.1; S.cam.pos.lerp(c.pos, k); S.cam.look.lerp(c.look, k); S.cam.fov += (c.fov - S.cam.fov) * k; S.cam.subject = c.subject; }
+  // indoors the lens stays inside the room
+  const room = scenes[S.scene]?.room; if (room) { const o = origin(); S.cam.pos.x = Math.max(o.x + room[0], Math.min(o.x + room[1], S.cam.pos.x)); S.cam.pos.z = Math.max(o.z + room[2], Math.min(o.z + room[3], S.cam.pos.z)); S.cam.pos.y = Math.min(room[4] ?? 9, S.cam.pos.y); }
+  const out = handheld({ pos: S.cam.pos.clone(), look: S.cam.look.clone(), fov: S.cam.fov });
+  W.focus((S.cam.subject || out.look).distanceTo(out.pos), out.fov);
+  return out;
 }
 
 // ---------------------------------------------------------------- words over the picture

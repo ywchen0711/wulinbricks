@@ -7,6 +7,7 @@ import { EffectComposer } from '../lib/addons/EffectComposer.js';
 import { RenderPass } from '../lib/addons/RenderPass.js';
 import { UnrealBloomPass } from '../lib/addons/UnrealBloomPass.js';
 import { OutputPass } from '../lib/addons/OutputPass.js';
+import { BokehPass } from '../lib/addons/BokehPass.js';
 import { buildStage } from './stage.js';
 import { makeTargets } from './targets.js';
 import { makeFX } from './fx.js';
@@ -16,6 +17,7 @@ import { MOVES } from './moves/index.js';
 import { GESTURES } from './gestures.js';
 import { reactAt, weightOf } from './react.js';
 import { resolve } from './physics.js';
+import { act, settle } from './acting.js';
 
 export const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 export const DEF = { armR: -0.2, armL: -0.2, outR: 0, outL: 0, hipR: 0, hipL: 0, tilt: 0, roll: 0, yaw: 0, head: 0, fwd: 0, y: 0, wristR: 0, wristL: 0 };
@@ -30,11 +32,12 @@ const curve = (pts, t) => { let i = 0; while (i < pts.length - 2 && t >= pts[i +
 const within = (r, t) => t >= r[0] && t <= r[1];
 const angWrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
-export function createWorld(canvas, { targets: withTargets = true } = {}) {
+export function createWorld(canvas, { targets: withTargets = true, dof = false } = {}) {
   const R = new THREE.WebGLRenderer({ canvas, antialias: true });
   R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.05; R.outputColorSpace = THREE.SRGBColorSpace;
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(40, 16 / 9, 0.05, 200);
-  const comp = new EffectComposer(R); comp.addPass(new RenderPass(scene, camera)); comp.addPass(new UnrealBloomPass(new THREE.Vector2(512, 512), 0.55, 0.45, 0.92)); comp.addPass(new OutputPass());
+  const comp = new EffectComposer(R); comp.addPass(new RenderPass(scene, camera)); comp.addPass(new UnrealBloomPass(new THREE.Vector2(512, 512), 0.55, 0.45, 0.92));
+  const bokeh = dof ? new BokehPass(scene, camera, { focus: 3, aperture: 0.002, maxblur: 0.006 }) : null; if (bokeh) comp.addPass(bokeh); comp.addPass(new OutputPass());
   const stage = buildStage(scene, R);
   { const pm = new THREE.PMREMGenerator(R), es = new THREE.Scene(); es.add(stage.sky.clone()); scene.environment = pm.fromScene(es, 0.04).texture; scene.environmentIntensity = 0.55; }
   const targets = makeTargets(scene), fx = makeFX(scene);
@@ -49,6 +52,7 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
       id, CH, hero, F, mark: { x: 0, z: 0, yaw: 0, ...mark }, team: mark.team ?? id + W.fighters.length, move: null, t: 0, fired: [], react: null, gesture: null, walk: null, mood: null, talk: 0, phase: W.fighters.length * 1.7,
       push: V(), lastArm: 0, lastHip: 0, p: { ...DEF },
       get pos() { return F.root.position.clone(); },
+      headPos() { return F.headP.getWorldPosition(V()); },
       get busy() { return !!(f.move || f.react || f.walk); },
       toWorld(v) { const y = f.mark.yaw, c = Math.cos(y), s = Math.sin(y); return V(f.mark.x + v.x * c + v.z * s, v.y, f.mark.z - v.x * s + v.z * c); },
       toLocal(v) { const y = f.mark.yaw, c = Math.cos(y), s = Math.sin(y), dx = v.x - f.mark.x, dz = v.z - f.mark.z; return V(dx * c - dz * s, v.y, dx * s + dz * c); },
@@ -93,12 +97,15 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
         p = poseAt(M, f.t); if (M.glow) glow = curve(M.glow, f.t); if (M.gather && within(M.gather, f.t)) gather = Math.sin(Math.PI * (f.t - M.gather[0]) / (M.gather[1] - M.gather[0])); if (M.trail) cutting = within(M.trail, f.t);
         f.F.face(M.face(f.t)); speed = Math.min(1, (Math.abs(p.armR - f.lastArm) + Math.abs(p.hipR - f.lastHip)) / Math.max(1e-4, mdt) / 12); active = { f, glow, gather, cutting, tint: M.tint };
       } else {
-        rest = f.CH.idle(W.clock + f.phase); p = { ...DEF, ...rest.pose }; let face = { ...rest.face };
+        rest = f.CH.idle(W.clock + f.phase); p = { ...DEF, ...rest.pose }; let face = { ...rest.face }; delete face.blink; // blinks come from the acting layer
         if (f.walk) { // walking to a point: legs and arms swinging, turned to where he goes
-          const to = f.walk.to, here = V(f.mark.x, 0, f.mark.z), d = to.clone().sub(here), L = d.length(), step = Math.min(L, f.walk.speed * mdt);
-          if (L > 0.02) { const want = Math.atan2(d.x, d.z); f.mark.yaw += angWrap(want - f.mark.yaw) * Math.min(1, mdt * 10); f.mark.x += d.x / L * step; f.mark.z += d.z / L * step; f.walkDist = (f.walkDist || 0) + step; }
-          const ph = (f.walkDist || 0) / 0.3 * Math.PI, k = Math.min(1, L / 0.15);
-          Object.assign(p, { hipR: Math.sin(ph) * 0.55 * k, hipL: -Math.sin(ph) * 0.55 * k, armR: -0.2 - Math.sin(ph) * 0.45 * k, armL: -0.2 + Math.sin(ph) * 0.45 * k, outR: 0.1, outL: 0.1, tilt: 0.05 * k * Math.min(1, f.walk.speed / 2), y: Math.abs(Math.cos(ph)) * 0.02 * k, yaw: 0, head: 0 });
+          const to = f.walk.to, here = V(f.mark.x, 0, f.mark.z), d = to.clone().sub(here), L = d.length(), want = Math.atan2(d.x, d.z), turn = angWrap(want - f.mark.yaw);
+          const top = f.walk.speed * (Math.abs(turn) > 1.2 ? 0.35 : 1), stopAt = Math.sqrt(2 * 2.5 * L); f.walk.v = Math.min(top, stopAt, (f.walk.v || 0) + 3.2 * mdt); // ease up to pace, and down to a stop
+          const step = Math.min(L, f.walk.v * mdt);
+          if (L > 0.02) { f.mark.yaw += turn * Math.min(1, mdt * 7); f.mark.x += d.x / L * step; f.mark.z += d.z / L * step; f.walkDist = (f.walkDist || 0) + step; }
+          const stride = f.F.height > 1.3 ? 0.3 : 0.22, ph = (f.walkDist || 0) / stride * Math.PI, k = Math.min(1, f.walk.v / 0.9), run = Math.min(1, Math.max(0, (f.walk.v - 1.8) / 1.5));
+          Object.assign(p, { hipR: Math.sin(ph) * (0.5 + 0.25 * run) * k, hipL: -Math.sin(ph) * (0.5 + 0.25 * run) * k, armR: -0.2 - Math.sin(ph) * (0.4 + 0.5 * run) * k - run * 0.3, armL: -0.2 + Math.sin(ph) * (0.4 + 0.5 * run) * k - run * 0.3, outR: 0.12, outL: 0.12,
+            tilt: (0.04 + 0.16 * run) * k, roll: Math.sin(ph) * 0.045 * k, y: Math.abs(Math.cos(ph)) * (0.018 + 0.03 * run) * k, yaw: Math.sin(ph) * 0.05 * k, head: -Math.sin(ph) * 0.04 * k });
           if (rest.ball) rest.ball = { rest: true };
           f.yawTo = null;
           if (L <= 0.02) { if (f.walk.face != null) f.mark.yaw = f.walk.face; f.walk = null; }
@@ -107,10 +114,12 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
         if ((f.gesture || f.still) && rest.ball) rest.ball = { rest: true };
         if (f.gesture) { const g = f.gesture, k = Math.min(1, g.t / 0.25) * (g.hold ? 1 : Math.min(1, (g.len - g.t) / 0.3)); const gp = typeof g.G.pose === 'function' ? g.G.pose(g.t) : g.G.pose; for (const key in gp) p[key] = p[key] + (gp[key] - p[key]) * Math.max(0, k); if (g.G.face) face = g.G.face; g.t += mdt; if (!g.hold && g.t >= g.len) f.gesture = null; }
         if (f.mood) face = { ...face, ...f.mood };
+        if (!f.hidden) act(f, p, face, mdt, W.clock, { hands: !f.gesture });
         if (typeof f.talk === 'number' && f.voice) face.mouth = { ...(face.mouth || {}), open: Math.min(1, f.talk * 1.3) };
         else if (f.talk) face.mouth = { ...(face.mouth || {}), open: Math.max(0, Math.sin(W.clock * 17) * 0.5 + Math.sin(W.clock * 11) * 0.3) };
         f.F.face(face);
       }
+      settle(f, p, mdt, !!M || !!f.react);
       // a blow taken, over everything
       if (f.react) {
         const r = f.react; let tt = r.t; if (r.hold && r.kind === 'down') tt = Math.min(tt, 1.6);
@@ -139,7 +148,8 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
   // a move's own camera, in the mover's frame
   W.moveCam = (f) => { const M = f.move, K = M.cam, t = f.t; let i = 0; while (i < K.length - 2 && t >= K[i + 1].t) i++; const a = K[i], b = K[i + 1], u = ease.smooth(Math.max(0, Math.min(1, (t - a.t) / (b.t - a.t)))); return { pos: f.toWorld(V(...a.pos).lerp(V(...b.pos), u)), look: f.toWorld(V(...a.look).lerp(V(...b.look), u)), fov: a.fov + (b.fov - a.fov) * u }; };
   const ray = new THREE.Raycaster(), ZERO = new THREE.Matrix4().makeScale(0, 0, 0), lifted = []; let bricks = null;
-  const unlift = () => { for (const [im, id, m] of lifted) { im.setMatrixAt(id, m); im.instanceMatrix.needsUpdate = true; } lifted.length = 0; };
+  const hid = []; let pieces = null;
+  const unlift = () => { for (const [im, id, m] of lifted) { im.setMatrixAt(id, m); im.instanceMatrix.needsUpdate = true; } lifted.length = 0; for (const o of hid) o.visible = true; hid.length = 0; };
   W.clearView = true;
   function clearView(pos, look) {
     unlift(); if (!W.clearView) return;
@@ -149,10 +159,14 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
     for (const [sx, sy] of [[0, 0], [0.32, 0], [-0.32, 0], [0, 0.4], [0, -0.45]]) {
       const from = look.clone().addScaledVector(side, sx).add(V(0, sy, 0)), dir = pos.clone().sub(from), len = dir.length(); if (len < 0.3) continue; dir.normalize();
       ray.set(from, dir); ray.far = len - 0.05;
+      pieces ||= (() => { const out = []; scene.traverse((o) => { if (o.userData.setPiece) out.push(o); }); return out; })();
+      for (const h of ray.intersectObjects(pieces, false)) if (h.object.visible) { h.object.visible = false; hid.push(h.object); }
       for (const h of ray.intersectObjects(bricks, false)) { if (h.instanceId == null) continue; const m = new THREE.Matrix4(); h.object.getMatrixAt(h.instanceId, m); lifted.push([h.object, h.instanceId, m]); h.object.setMatrixAt(h.instanceId, ZERO); h.object.instanceMatrix.needsUpdate = true; }
     }
   }
   W.place = (c) => { clearView(c.pos, c.look); const sh = fx.S.shake * 0.12; stage.sky.position.copy(c.pos); camera.position.copy(c.pos).add(V((Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh, 0)); camera.lookAt(c.look); camera.fov = c.fov || 40; camera.updateProjectionMatrix(); };
+  // the lens: focused at a distance, the background softer the longer the lens
+  W.focus = (dist, fov = 40) => { if (!bokeh) return; bokeh.uniforms.focus.value = dist; bokeh.uniforms.aperture.value = 0.0016 * Math.pow(40 / fov, 1.6); };
   W.render = () => comp.render();
   W.resize = (w = innerWidth, h = innerHeight) => { const d = Math.min(2, devicePixelRatio || 1); R.setPixelRatio(d); R.setSize(w, h, false); comp.setPixelRatio(d); comp.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); };
   W.clear = () => { while (W.fighters.length) W.fighters[0].remove(); fx.reset(); W._clashed.clear(); W.proj = []; for (const M of Object.values(MOVES)) M.reset?.(); };

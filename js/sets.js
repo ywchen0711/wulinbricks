@@ -7,6 +7,7 @@
 // SETS[name] = { x, z } is where each stands; a set may answer time(tod) to light its lamps for the hour.
 import * as THREE from '../lib/three.module.min.js';
 import { kit, P, BH, PH } from './brick/bricks.js';
+import { decorateManor, decorateTeahouse } from './decor.js';
 
 export const SETS = { road: { x: 0, z: 0 }, manor: { x: 200, z: 0 }, teahouse: { x: 400, z: 0 } };
 
@@ -16,7 +17,8 @@ function board(text, w, h, { size = 64, bg = '#1a0c08', fg = '#f0c858', vertical
   g.fillStyle = fg; g.font = `900 ${size}px "Noto Serif TC", "Songti TC", serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
   if (vertical) [...text].forEach((ch, i) => g.fillText(ch, c.width / 2, c.height * (i + 0.5) / text.length)); else g.fillText(text, c.width / 2, c.height / 2 + 4);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-  return new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.06), [null, null, null, null, new THREE.MeshPhysicalMaterial({ map: t, roughness: 0.35, clearcoat: 0.5 }), new THREE.MeshPhysicalMaterial({ color: bg })].map((m) => m || new THREE.MeshPhysicalMaterial({ color: bg })));
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.06), [null, null, null, null, new THREE.MeshPhysicalMaterial({ map: t, roughness: 0.35, clearcoat: 0.5 }), new THREE.MeshPhysicalMaterial({ color: bg })].map((m) => m || new THREE.MeshPhysicalMaterial({ color: bg })));
+  mesh.userData.setPiece = true; return mesh;
 }
 // a run of wall along x (rot 0) or along z (rot 1), n bricks high, with a coping of dark tiles and slopes
 function wall(K, x0, z0, len, n, along, color = '#d0c8b8', cap = '#3a3e48') {
@@ -66,6 +68,7 @@ function manor(scene) {
   for (const [x, z] of [[-3, 3.4], [3, 3.4]]) { K.brick(x, 0, z, 2, 2, 'plate', '#7a7a76'); K.round(x, PH, z, 1, 'brick', '#7a7a76'); K.round(x, PH + BH, z, 1, 'brick', '#7a7a76'); K.brick(x, PH + 2 * BH, z, 2, 2, 'plate', '#7a7a76'); K.brick(x, 2 * PH + 2 * BH, z, 1, 1, 'brick', '#ffd27a', 0, 'glow'); K.brick(x, 2 * PH + 3 * BH, z, 2, 2, 'plate', '#5a5a56'); const l = new THREE.PointLight('#ffb060', 1.2, 6, 2); l.position.set(x, 0.95, z); G.add(l); lamps.push(l); }
   // pines outside the walls
   for (let k = 0; k < 14; k++) { const a = k / 14 * 6.28 + 0.2, r = 10 + (k % 3) * 2.5, x = Math.cos(a) * r, z = Math.sin(a) * r; if (z > 6 && Math.abs(x) < 3) continue; let y = 0; for (let j = 0; j < 5; j++) y = K.round(x, y, z, 1, 'brick', '#5a3a24'); for (let w = 8; w >= 2; w -= 2) { y = K.round(x, y, z, w, 'brick', '#24563a'); y = K.round(x, y, z, Math.max(2, w - 2), 'plate', '#1a3e24'); } }
+  decorateManor(scene, K, G, O, lamps);
   K.done();
   return { lamps, time(t) { const k = t === 'night' ? 2.6 : t === 'dusk' || t === 'dawn' ? 1.4 : 0.5; lamps.forEach((l) => (l.intensity = k)); } };
 }
@@ -85,7 +88,7 @@ function teahouse(scene) {
   K.brick(0, 2 * BH, -2.2, 8, 3, 'plate', '#a8281e'); K.brick(0, 2 * BH + PH, -2.2, 8, 3, 'tile', '#6a4228'); // the desk with its red cloth
   K.round(0.6, 2 * BH + 2 * PH, -2.3, 1, 'plate', '#f0ece0');
   const nb = board('聽雨樓', 1.8, 0.6, { size: 74 }); nb.position.set(O.x, 2.6, O.z - 3.55); scene.add(nb);
-  for (const s of [-1, 1]) { const sc = board(s < 0 ? '說古論今' : '醒木驚堂', 0.42, 1.5, { size: 54, bg: '#efe6cc', fg: '#2a1a12', vertical: true }); sc.position.set(O.x + s * 1.5, 1.7, O.z - 3.55); scene.add(sc); }
+  for (const s of [-1, 1]) { const sc = board(s < 0 ? '說古論今' : '醒木驚堂', 0.42, 1.5, { size: 54, bg: '#efe6cc', fg: '#2a1a12', vertical: true }); sc.position.set(O.x + s * 2.4, 1.7, O.z - 3.55); scene.add(sc); }
   // tables and benches for the listeners, cups and pots on them
   for (const [tx, tz] of [[-2.2, 0.6], [2.2, 0.6], [0, 2.2]]) {
     for (const [dx, dz] of [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]]) { K.brick(tx + dx, 0, tz + dz, 1, 1, 'brick', '#4a2e1c'); K.brick(tx + dx, BH, tz + dz, 1, 1, 'brick', '#4a2e1c'); }
@@ -93,6 +96,7 @@ function teahouse(scene) {
     for (const s of [-1, 1]) { K.brick(tx + s * 0.95, 0, tz, 1, 1, 'brick', '#4a2e1c'); K.brick(tx + s * 0.95, BH, tz, 2, 6, 'plate', '#6a4228'); }
   }
   for (const [x, z] of [[-2.2, 0.2], [2.2, 0.2], [0, -1.0]]) lantern(G, K, x, 2.7, z, lamps);
+  decorateTeahouse(scene, K, G, O, lamps);
   K.done();
   // rain past the windows
   const n = 500, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const s = i % 2 ? 1 : -1; pos.set([s * (4.9 + Math.random() * 1.6), Math.random() * 3.4, (Math.random() - 0.5) * 4.4], i * 3); }
