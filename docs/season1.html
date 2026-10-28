@@ -1,0 +1,354 @@
+<title>龍門雙奕 第一季</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&family=Noto+Sans+TC:wght@400;500;700&family=LXGW+WenKai+TC&display=swap">
+<style>
+/* Layout: one reading column like a script binder; episodes as numbered beat sheets with a 3/5/2 timing strip; reference tables at the back */
+:root {
+  --paper: #f1f2f5; --sheet: #ffffff; --ink: #1c2130; --muted: #5d6478; --rule: #d9dce4;
+  --indigo: #2c4688; --brass: #9a7630; --cinnabar: #a8342a; --wash: #e6eaf4;
+  --display: "Noto Serif TC", "Songti TC", serif; --body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; --poem: "LXGW WenKai TC", "Kaiti TC", "KaiTi", serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper: #12151d; --sheet: #1a1e29; --ink: #e6e8ef; --muted: #9aa1b5; --rule: #2c3242; --indigo: #8fa8ec; --brass: #d2ad62; --cinnabar: #e0796c; --wash: #222a3d; color-scheme: dark; } }
+:root[data-theme="dark"] { --paper: #12151d; --sheet: #1a1e29; --ink: #e6e8ef; --muted: #9aa1b5; --rule: #2c3242; --indigo: #8fa8ec; --brass: #d2ad62; --cinnabar: #e0796c; --wash: #222a3d; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.75; padding: 0 16px; }
+.wrap { max-width: 880px; margin: 0 auto; padding-block: 40px 80px; display: grid; gap: 48px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.3; }
+h2 { font-size: 26px; letter-spacing: .06em; padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
+h3 { font-size: 20px; }
+p { margin: 0; }
+.label { font-size: 12px; letter-spacing: .18em; color: var(--muted); font-weight: 700; }
+section { display: grid; gap: 18px; min-width: 0; }
+/* the cover */
+.cover { display: grid; gap: 14px; padding-block: 12px; }
+.cover h1 { font-size: clamp(40px, 8vw, 72px); letter-spacing: .12em; font-weight: 900; }
+.cover h1 small { display: block; font-size: .32em; letter-spacing: .3em; color: var(--indigo); margin-bottom: 6px; }
+.logline { font-size: 19px; line-height: 1.8; max-width: 40em; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; color: var(--muted); font-size: 14px; }
+.facts b { color: var(--ink); }
+/* themes */
+.themes { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.theme { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; display: grid; gap: 6px; }
+.theme h3 { font-size: 22px; color: var(--indigo); }
+/* the structure strip: 3 / 5 / 2 minutes */
+.strip { display: grid; grid-template-columns: 3fr 5fr 2fr; border-radius: 4px; overflow: hidden; font-size: 13px; font-weight: 700; color: #fff; }
+.strip span { padding: 6px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s1 { background: #5d6f9c; } .s2 { background: #2c4688; } .s3 { background: #a8342a; }
+.devices { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.device { border-left: 3px solid var(--brass); padding: 2px 0 2px 12px; }
+.device b { display: block; font-family: var(--display); }
+/* spoiler */
+.secret { background: var(--wash); border-radius: 6px; padding: 18px 20px; display: grid; gap: 10px; }
+.secret .label { color: var(--cinnabar); }
+/* cast */
+.cast { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.who { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; }
+.who header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.who h3 { font-size: 24px; }
+.who .role { font-size: 13px; color: var(--muted); }
+.who .made { font-size: 11px; font-weight: 700; color: var(--indigo); border: 1px solid var(--indigo); border-radius: 3px; padding: 0 5px; }
+.poem { font-family: var(--poem); font-size: 18px; line-height: 1.85; color: var(--ink); border-top: 1px dashed var(--rule); padding-top: 8px; }
+.who p.note { font-size: 14px; color: var(--muted); }
+/* episodes */
+.ep { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 20px 22px; display: grid; gap: 14px; min-width: 0; }
+.ep header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.ep .num { font-family: var(--display); font-size: 15px; color: var(--muted); letter-spacing: .1em; }
+.ep h3 { font-size: 26px; letter-spacing: .08em; }
+.ep .cold { font-family: var(--poem); font-size: 17px; color: var(--muted); }
+.beats { display: grid; gap: 10px; }
+.beat { display: grid; grid-template-columns: 76px 1fr; gap: 12px; }
+.beat .t { font-size: 12px; font-weight: 700; letter-spacing: .08em; padding-top: 4px; font-variant-numeric: tabular-nums; }
+.beat:nth-child(1) .t { color: #5d6f9c; } .beat:nth-child(2) .t { color: var(--indigo); } .beat:nth-child(3) .t { color: var(--cinnabar); }
+.beat p { min-width: 0; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 12.5px; border-radius: 3px; padding: 2px 8px; background: var(--wash); color: var(--ink); }
+.tag b { color: var(--muted); font-weight: 500; margin-right: 4px; }
+.hook { border-left: 3px solid var(--cinnabar); padding-left: 12px; font-weight: 500; }
+/* tables */
+.tbl { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 14px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .1em; color: var(--muted); background: var(--wash); }
+tr:last-child td { border-bottom: 0; }
+td.n { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--muted); }
+.have { color: var(--indigo); font-weight: 700; }
+.fake { color: var(--cinnabar); }
+ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+a { color: var(--indigo); }
+@media (max-width: 520px) { .beat { grid-template-columns: 1fr; gap: 2px; } .ep { padding: 16px; } }
+</style>
+
+<div class="wrap">
+
+<header class="cover">
+  <h1><small>武林積木 · 劇集企劃</small>龍門雙奕 第一季</h1>
+  <p class="logline">父親被誣陷殺害武林盟主，刀客哥哥奕叡和蹴鞠少年弟弟奕碩踏上逃亡之路，在十集之內收齊四片「天機鑰」、揪出幕後黑手，最後才發現真正的敵人一直藏在所有人眼前。</p>
+  <div class="facts"><span><b>10</b> 集</span><span>每集約 <b>10</b> 分鐘</span><span>積木人偶 3D 動畫</span><span>布袋戲式出場詩號、招式喊名、慢動作亮招</span></div>
+</header>
+
+<section>
+  <h2>主題</h2>
+  <div class="themes">
+    <div class="theme"><h3>義氣</h3><p>每個盟友都是因為兄弟先為他們付出，才願意以命相挺：一個包子換來瘦猴，一刀擋下換來柳寒煙，救敵人一命換來冷笑天。</p></div>
+    <div class="theme"><h3>計謀</h3><p>正反兩方都在布局。每集至少埋一條觀眾看得到的線索，但真相總比猜測多一層：觀眾猜到「盟主沒死」時，還沒猜到他就坐在說書台上。</p></div>
+    <div class="theme"><h3>成長</h3><p>哥哥學會相信別人，弟弟學會不靠蠻衝。兄弟從吵架分頭，到最後閉眼把背後交給對方，合出第一招。</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>每集的形式</h2>
+  <div class="strip" aria-label="每集時間分配"><span class="s1">鋪陳 0–3′</span><span class="s2">衝突 3–8′</span><span class="s3">反轉 8–10′</span></div>
+  <p>每集用聽雨樓說書人白先生的一段<b>開場說書</b>起頭（約 20 秒，醒木一拍）。他說的永遠是「上一集之後的江湖傳聞」，而且總比劇中人早一步知道消息。這是全季最大的伏筆。結尾停在一個鉤子上，下一集的開場說書接住它。</p>
+  <div class="devices">
+    <div class="device"><b>出場詩號</b>重要角色第一次登場：慢推鏡、名號大字、四句詩，人物定格亮相。</div>
+    <div class="device"><b>招式喊名</b>出招前喊出全名，畫面打上招式名，與招式檔（js/moves）一一對應。</div>
+    <div class="device"><b>慢動作亮招</b>每集一到兩次：關鍵一招降到四分之一速度，再瞬間回速出擊。</div>
+    <div class="device"><b>門派・秘笈・易容・假死</b>四大武俠橋段在季中各有一個主場，並在結局一起收線。</div>
+  </div>
+</section>
+
+<section>
+  <h2>江湖與天機鑰</h2>
+  <p><b>天機閣</b>是百年前天機老人所建的密閣，閣中藏有兩樣東西：《天機策》，據說讀懂便能預見江湖每一步棋；《天機錄》，則記下江湖每一樁不可告人的事。閣門要四片天機鑰才能打開，四片分由四家看守：</p>
+  <div class="tbl"><table>
+    <thead><tr><th>鑰</th><th>看守</th><th>所在</th><th>本季如何到手</th></tr></thead>
+    <tbody>
+      <tr><td>青龍鑰</td><td>奕長風（龍門刀莊）</td><td>縫在奕碩的足球裡</td><td>第一集結尾球裂開才發現</td></tr>
+      <tr><td>朱雀鑰</td><td>柳寒煙（寒江閣）</td><td>寒江閣</td><td>第三集先給了一片<span class="fake">假的</span>，第八集才交出真的</td></tr>
+      <tr><td>白虎鑰</td><td>冷笑天（暴龍崖）</td><td>暴龍崖</td><td>第四集不給；第七集劫獄後擲給奕叡，還兄弟的人情</td></tr>
+      <tr><td>玄武鑰</td><td>苦禪大師（千佛寺）</td><td>千佛寺</td><td>第六集大師「圓寂」、鑰匙失蹤；第八集大師現身交出</td></tr>
+    </tbody>
+  </table></div>
+  <p>勢力：<b>武林盟</b>（盟主司徒鎮岳、副盟主兼執法堂主鐵無私）；<b>黑風寨</b>，拿錢辦事的山賊；<b>聽雨樓</b>，十字路口的說書茶樓，江湖消息都從這裡經過。</p>
+  <div class="secret">
+    <span class="label">編劇用 · 全季真相（防雷）</span>
+    <p>二十年前，司徒鎮岳毒殺自己的師父才當上盟主，這件事記在《天機錄》裡。奕長風查到蛛絲馬跡，打算在盟主大會上提議開閣。</p>
+    <p>司徒搶先一步：服下龜息散<b>假死</b>，用一具易容成自己的替身屍體，替身身上留著偽造的龍門刀痕（左手所刻），一石二鳥：嫁禍奕長風，同時讓自己從江湖「消失」。</p>
+    <p>接著他<b>易容</b>成說書人白先生，坐在聽雨樓收消息、放消息。四家看守只會把鑰匙交給值得信任的人，他拿不到，所以他引兩兄弟去收鑰匙，再一次拿走。刀疤和黑風寨是他暗中的手。</p>
+  </div>
+</section>
+
+<section>
+  <h2>角色與出場詩號</h2>
+  <p class="label">標 ✓ 的角色已在武林積木中建模，招式可直接使用</p>
+  <div class="cast">
+    <article class="who"><header><h3>奕叡</h3><span class="role">啟程刀客 · 哥哥</span><span class="made">✓ 已建模</span></header>
+      <p class="poem">孤刀一柄出龍門，<br>不問前程問本心；<br>縱使天下皆疑我，<br>一刀啟程萬里新。</p>
+      <p class="note">招式：一刀啟程 ✓、二式斷水（第七集新招）、合招風刀合璧。弱點：除了弟弟誰都不信，偏偏信錯了白先生。</p></article>
+    <article class="who"><header><h3>奕碩</h3><span class="role">旋風少俠 · 弟弟</span><span class="made">✓ 已建模</span></header>
+      <p class="poem">腳下生風不讓人，<br>一球踢散滿天雲；<br>江湖莫笑年紀小，<br>旋風起處見真心。</p>
+      <p class="note">招式：旋風球 ✓、落葉回旋踢（第六集）、合招。弱點：一看到不公就衝，衝完才想。右嘴角上方有痣。</p></article>
+    <article class="who"><header><h3>冷笑天</h3><span class="role">暴龍 · 白虎鑰看守</span><span class="made">✓ 已建模</span></header>
+      <p class="poem">冷笑三聲天下寒，<br>暴龍一怒海波翻；<br>世人笑我狂且傲，<br>我笑世人看不穿。</p>
+      <p class="note">招式：笑盡天下 ✓、暴龍吞天。全季最大的煙霧彈：第二集自稱殺了盟主，其實是在試探兄弟。最後一句詩是他的真心話：他早就看穿了。</p></article>
+    <article class="who"><header><h3>白先生</h3><span class="role">聽雨樓說書人</span></header>
+      <p class="poem">醒木一聲說古今，<br>三分真話七分音；<br>台前道盡他人事，<br>莫問先生是何人。</p>
+      <p class="note">每集開場的說書人，消息靈通，總在兄弟落難時指一條路。永遠穿長袖，左手拿醒木。真身是司徒鎮岳。</p></article>
+    <article class="who"><header><h3>司徒鎮岳</h3><span class="role">武林盟主 · 已「死」</span></header>
+      <p class="poem">天機在手萬象收，<br>江湖本是一盤謀；<br>世人皆在棋中走，<br>唯我執子笑白頭。</p>
+      <p class="note">第九集撕下白先生的臉皮，才第一次念出這首詩。招式：天機掌（預判對手每一步）、萬象歸一。腕上有一道二十年前的舊燒疤。</p></article>
+    <article class="who"><header><h3>鐵無私</h3><span class="role">副盟主 · 執法堂主</span></header>
+      <p class="poem">鐵面一張不認親，<br>律條兩字重千鈞；<br>是非黑白憑真證，<br>天下無人敢欺心。</p>
+      <p class="note">追捕兄弟的人，固執但正直，是觀眾的紅鯡魚。招式：鐵鎖連環。從第七集開始動搖，第十集當眾作證。</p></article>
+    <article class="who"><header><h3>柳寒煙</h3><span class="role">寒江閣主 · 朱雀鑰看守</span></header>
+      <p class="poem">寒江獨釣一蓑煙，<br>劍出霜飛雪滿天；<br>莫道女兒心似水，<br>水能載舟亦覆船。</p>
+      <p class="note">冷淡多疑，第三集給了兄弟假鑰匙。招式：寒江雪劍。徒弟小蓮是奕碩在江湖上的第一個朋友。</p></article>
+    <article class="who"><header><h3>苦禪大師</h3><span class="role">千佛寺 · 玄武鑰看守</span></header>
+      <p class="poem">一杖芒鞋踏破塵，<br>千佛座下了凡心；<br>世間生死皆是相，<br>何必執著假與真。</p>
+      <p class="note">以龜息功假死保護鑰匙。他記得盟主腕上的燒疤，是第一個發現「棺裡那具不是盟主」的人。招式：大悲掌。</p></article>
+    <article class="who"><header><h3>奕長風</h3><span class="role">龍門刀莊莊主 · 父親</span></header>
+      <p class="poem">半生磨刀未染塵，<br>一身清白託兒孫；<br>天牢縱鎖英雄骨，<br>鎖不住龍門一片心。</p>
+      <p class="note">被誣陷的父親。坐牢也不肯逃，因為「逃了就真成了兇手」。在牢牆刻下「盟主腕上有疤」。</p></article>
+    <article class="who"><header><h3>瘦猴</h3><span class="role">黑風寨嘍囉 → 線人</span><span class="made">✓ 已建模</span></header>
+      <p class="poem">人稱瘦猴跑得快，<br>打架不行嘴巴壞；<br>今日改邪歸正路，<br>明日說書賺大財。</p>
+      <p class="note">第一個被兄弟的義氣收服的人（一個包子）。詩裡的「說書」是結局的伏筆。</p></article>
+    <article class="who"><header><h3>黑熊 · 刀疤</h3><span class="role">黑風寨寨主 · 二當家</span><span class="made">✓ 已建模</span></header>
+      <p class="poem">黑熊下山棍開路，刀疤出手不留情。</p>
+      <p class="note">招式：掄棍 ✓、重拳 ✓。刀疤兼做易容殺手，替幕後黑手傳信；第八集被滅口。</p></article>
+  </div>
+</section>
+
+<section>
+  <h2>分集大綱</h2>
+  <p>已完成的原型《奕碩遇險》就是第一集的衝突段：黑風寨要搶的，其實是球裡的青龍鑰。</p>
+
+  <article class="ep"><header><span class="num">第一集</span><h3>龍門血案</h3></header>
+    <p class="cold">開場說書：「今兒個說一段新鮮的——武林盟主，昨夜死在龍門。」（鎮上的人要到隔天早上才聽到這個消息）</p>
+    <div class="beats">
+      <div class="beat"><span class="t">鋪陳 0–3′</span><p>盟主大會前夕的龍門刀莊。父親教奕叡一刀啟程（奕叡出場詩）；奕碩在院子裡踢球踢破燈籠（奕碩出場詩）。父親把「補好的」舊球還給奕碩：「這顆球，比你的命還要緊。」</p></div>
+      <div class="beat"><span class="t">衝突 3–8′</span><p>深夜，盟主死在客房，身上是龍門刀痕。鐵無私（出場詩）當場拿下奕長風，父親只來得及說：「帶弟弟走，別回頭。」兄弟連夜出逃，在村外被黑風寨圍住要搶球（《奕碩遇險》原型：旋風球踢倒瘦猴；刀疤一拳、黑熊一棍打倒奕碩）。奕叡趕到，<b>慢動作亮招</b>一刀啟程，三人倒地逃走。</p></div>
+      <div class="beat"><span class="t">反轉 8–10′</span><p>瘦猴逃跑時掉下一塊盟主府的執法令牌：雇山賊的人在盟主府裡。奕碩的球被棍子打裂，縫線裡露出一片刻著青龍的玉：青龍鑰。</p></div>
+    </div>
+    <p class="hook">鉤子：黑暗中傳來三聲冷笑，看不見人。</p>
+    <div class="tags"><span class="tag"><b>武俠</b>門派（龍門刀莊）</span><span class="tag"><b>線索</b>說書人比消息早</span><span class="tag"><b>亮招</b>一刀啟程</span></div>
+  </article>
+
+  <article class="ep"><header><span class="num">第二集</span><h3>聽雨說書</h3></header>
+    <p class="cold">開場說書：白先生把兩個逃犯說成「兩條被冤的小龍」，台下一片噓聲。</p>
+    <div class="beats">
+      <div class="beat"><span class="t">鋪陳 0–3′</span><p>兄弟躲在鎮上。奕碩餓得發昏，卻把最後一個包子分給被黑風寨趕出來的瘦猴（瘦猴出場詩），奕叡反對無效。瘦猴說：江湖上什麼都知道的，只有聽雨樓的白先生。</p></div>
+      <div class="beat"><span class="t">衝突 3–8′</span><p>白先生（出場詩）講出天機閣、四片鑰匙和看守者：開了閣，《天機錄》裡寫著誰殺了盟主。執法堂突然包圍茶樓，奕碩衝出去單挑鐵無私，三招就被鐵鎖連環捆住。奕叡從白先生指的密道繞後救人。白先生說「我來拖住他們」，最後毫髮無傷。</p></div>
+      <div class="beat"><span class="t">反轉 8–10′</span><p>月下石橋，一個人擋住去路：冷笑天（出場詩，三聲冷笑）。</p></div>
+    </div>
+    <p class="hook">鉤子：「你們的爹，殺不了盟主。因為——盟主是我殺的。」</p>
+    <div class="tags"><span class="tag"><b>義氣</b>一個包子 → 瘦猴</span><span class="tag"><b>成長</b>奕碩蠻衝被擒</span><span class="tag"><b>線索</b>白先生與鐵無私從不同框</span></div>
+  </article>
+
+  <article class="ep"><header><span class="num">第三集</span><h3>寒江煙雨</h3></header>
+    <p class="cold">開場說書：「暴龍說他殺了盟主，各位信不信？我呀，不信。」</p>
+    <div class="beats">
+      <div class="beat"><span class="t">鋪陳 0–3′</span><p>橋上冷笑天只出一掌（笑盡天下），石橋斷裂，留下一句「想知道真相，到暴龍崖來」便走。兄弟依白先生建議，先去近一點的寒江閣。柳寒煙（出場詩）冷冷拒絕，她的小徒弟小蓮卻跟奕碩踢起球來。</p></div>
+      <div class="beat"><span class="t">衝突 3–8′</span><p>夜裡，一個<b>易容</b>成柳寒煙的刺客擄走小蓮，要逼真的柳寒煙交出朱雀鑰。奕碩又衝在前面，驚動刺客；奕叡用身體替小蓮擋下一刀。柳寒煙<b>慢動作亮招</b>寒江雪劍，削下刺客的假臉：是刀疤。</p></div>
+      <div class="beat"><span class="t">反轉 8–10′</span><p>柳寒煙把朱雀鑰交給兄弟：「我欠你們一命。」兄弟走遠後，她對小蓮說：「真的那片，還不能交出去。」刀疤逃走時，放出一隻紙鶴傳信，紙鶴的折法和聽雨樓的戲單一模一樣。</p></div>
+    </div>
+    <p class="hook">鉤子：紙鶴落在一隻拿醒木的左手上（只拍手）。</p>
+    <div class="tags"><span class="tag"><b>武俠</b>易容</span><span class="tag"><b>義氣</b>替小蓮擋刀 → 柳寒煙</span><span class="tag"><b>線索</b>紙鶴折法・左手</span></div>
+  </article>
+
+  <article class="ep"><header><span class="num">第四集</span><h3>暴龍崖上</h3></header>
+    <p class="cold">開場說書：暴龍的傳說——「聽過他笑聲的人，多半已經躺下了。」</p>
+    <div class="beats">
+      <div class="beat"><span class="t">鋪陳 0–3′</span><p>上暴龍崖的機關路。奕叡怕弟弟又衝動，半夜甩下他獨自上山；奕碩循著刀痕追上去。</p></div>
+      <div class="beat"><span class="t">衝突 3–8′</span><p>奕叡對冷笑天：一刀啟程對上笑盡天下，兩招在半空<b>相撞抵銷</b>（對打模式的碰撞）。奕碩衝進來，兩兄弟一起被掌風掃飛。冷笑天端詳奕叡的刀：「龍門刀右手出，刀痕左低右高。盟主身上的刀痕——是左手偽造的。」他沒殺盟主，那句話只是試探。白虎鑰？「拿得走再說。」</p></div>
+      <div class="beat"><span class="t">反轉 8–10′</span><p>深夜，一群穿執法堂服的蒙面人用毒鏢偷襲冷笑天。奕碩想都沒想就擋上去，奕叡猶豫一瞬也跟上。冷笑天中毒負傷，一句謝都沒說，消失在霧裡。</p></div>
+    </div>
+    <p class="hook">鉤子：另一頭，鐵無私讀著一封信「暴龍已除」，眉頭皺起：這道命令不是他下的。</p>
+    <div class="tags"><span class="tag"><b>武俠</b>秘笈（暴龍掌譜）</span><span class="tag"><b>線索</b>左手刀痕</span><span class="tag"><b>義氣</b>救敵人 → 冷笑天</span><span class="tag"><b>亮招</b>刀掌相撞</span></div>
+  </article>
+
+  <article class="ep"><header><span class="num">第五集</span><h3>兄弟分頭</h3></header>
+    <p class="cold">開場說書：「兄弟同心，其利斷金；兄弟離心……那就好說了。」</p>
+    <div class="beats">
+      <div class="beat"><span class="t">鋪陳 0–3′</span><p>大吵一架。奕碩：「冷笑天、瘦猴都能信！」奕叡：「江湖裡除了你，我誰都不信。」奕碩：「你連我都不信！你昨晚丟下我！」兩人分頭：奕叡帶著青龍、朱雀兩片鑰匙，潛進盟主府查偽造刀痕的人；奕碩跟瘦猴去千佛寺找玄武鑰。</p></div>
+      <div class="beat"><span class="t">衝突 3–8′</span><p>兩線交叉剪接。奕叡戴上白先生給的人皮面具（線索：說書人會易容），混進盟主府靈堂，發現棺中「盟主」的手比記憶中年輕，卻被鐵無私識破，鐵鎖連環<b>慢動作亮招</b>，奕叡被擒。奕碩那邊在山路上被黑熊截住，一個人衝上去，連球都被搶走，靠瘦猴的歪招才逃掉。</p></div>
+      <div class="beat"><span class="t">反轉 8–10′</span><p>奕叡被押進天牢，隔壁牢房就是父親：「你怎麼也來了……」</p></div>
+    </div>
+    <p class="hook">鉤子：奕碩趕到千佛寺山門，喪鐘正響：「苦禪大師……圓寂了。」</p>
+    <div class="tags"><span class="tag"><b>成長</b>兄弟分頭，各自碰壁</span><span class="tag"><b>武俠</b>易容潛入</span><span class="tag"><b>線索</b>白先生的面具</span></div>
+  </article>
+
+  <article class="ep"><header><span class="num">第六集</span><h3>千佛假死</h3></header>
+    <p class="cold">開場說書：白先生哀悼苦禪大師，說得聲淚俱下。這時寺裡的訃告還沒有發出。</p>
+    <div class="beats">
+      <div class="beat"><span class="t">鋪陳 0–3′</span><p>大師停靈，玄武鑰不翼而飛，僧眾懷疑陌生的奕碩。小和尚了空偷偷收留他。奕碩在大師的練功院看到一句刻字：「球不離心。」</p></div>
+      <div class="beat"><span class="t">衝突 3–8′</span><p>沒有哥哥、沒有球，奕碩只能一整夜練著不衝動：讓石球停在腳背，不許它落地。黑熊、刀疤夜襲寺院搶鑰匙。這次奕碩沒有衝，借地形引開兩人，用撿回的球踢出新招<b>落葉回旋踢</b>（慢動作亮招，繞過柱子打中黑熊後腦）。</p></div>
+      <div class="beat"><span class="t">反轉 8–10′</span><p>棺材裡，苦禪的手指動了：<b>假死</b>（龜息功）。他低聲說出全季的轉折：「盟主腕上有一道舊燒疤。棺裡那具，沒有。」</p></div>
+    </div>
+    <p class="hook">鉤子：盟主……可能還活著。</p>
+    <div class="tags"><span class="tag"><b>武俠</b>假死</span><span class="tag"><b>成長</b>奕碩學會不蠻衝</span><span class="tag"><b>亮招</b>落葉回旋踢</span><span class="tag"><b>線索</b>燒疤</span></div>
+  </article>
+
+  <article class="ep"><header><span class="num">第七集</span><h3>天牢劫獄</h3></header>
+    <p class="cold">開場說書：白先生講一段古時的劫獄。台下的奕碩聽出他把天牢的換班時間講得一清二楚。</p>
+    <div class="beats">
+      <div class="beat"><span class="t">鋪陳 0–3′</span><p>牢中父子夜談。父親說出他查到的二十年前舊案，以及沉默的理由：怕牽連兒子。鐵無私來審奕叡，奕叡句句實話，鐵無私第一次答不上來。</p></div>
+      <div class="beat"><span class="t">衝突 3–8′</span><p>奕碩、瘦猴劫獄，冷笑天突然現身相助，還兄弟上次的救命之恩。冷笑天對鐵無私，笑盡天下對鐵鎖連環。奕叡在混戰中悟出新招<b>二式斷水</b>（慢動作亮招）。父親不肯走：「逃了，就真成兇手了。」兄弟背靠背殺出去時互道一句：「哥，我錯了。」「是我先不信你。」</p></div>
+      <div class="beat"><span class="t">反轉 8–10′</span><p>逃出城外，冷笑天把白虎鑰擲給奕叡：「欠你們的，還了。」三片鑰匙一比，奕叡發現朱雀那片的紋路不對：是假的。</p></div>
+    </div>
+    <p class="hook">鉤子：空牢房裡，鐵無私看見父親刻在牆上的字：「盟主腕上有疤」。</p>
+    <div class="tags"><span class="tag"><b>義氣</b>冷笑天回報</span><span class="tag"><b>成長</b>兄弟和好</span><span class="tag"><b>亮招</b>二式斷水</span><span class="tag"><b>線索</b>說書人知道換班時間</span></div>
+  </article>
+
+  <article class="ep"><header><span class="num">第八集</span><h3>四鑰歸一</h3></header>
+    <p class="cold">開場說書：天機老人建閣的傳說，「四鑰一合，天機自現」。</p>
+    <div class="beats">
+      <div class="beat"><span class="t">鋪陳 0–3′</span><p>回到寒江閣。兄弟沒有質問柳寒煙給的假鑰匙，只帶來小蓮想要的新球，說「換作我們，也不會信」。苦禪大師活著現身，替兄弟作保，柳寒煙交出真的朱雀鑰，大師交出玄武鑰。</p></div>
+      <div class="beat"><span class="t">衝突 3–8′</span><p>黑風寨和一群易容殺手圍攻寒江閣，要一次搶走四片鑰匙（他們怎麼知道鑰匙今晚會齊？只有白先生被告知過）。江上船陣大戰，盟友合力：寒江雪劍、大悲掌、笑盡天下，加上瘦猴的歪招。刀疤被擒，剛要開口就被暗處一鏢滅口。</p></div>
+      <div class="beat"><span class="t">反轉 8–10′</span><p>四鑰合成天機圓盤，投出地圖：天機閣就在龍門刀莊後山的瀑布裡。白先生趕來說：「那地方，我知道怎麼走。」奕叡點頭。這是他第一次主動信人，卻信錯了。</p></div>
+    </div>
+    <p class="hook">鉤子：白先生端起茶，袖口滑落兩格畫面：腕上一道燒疤。</p>
+    <div class="tags"><span class="tag"><b>義氣</b>不質問 → 柳寒煙交真鑰</span><span class="tag"><b>武俠</b>門派大會戰</span><span class="tag"><b>線索</b>燒疤一閃</span></div>
+  </article>
+
+  <article class="ep"><header><span class="num">第九集</span><h3>天機閣開</h3></header>
+    <p class="cold">開場：聽雨樓的說書椅是空的。醒木擺在桌上，沒有人拍。</p>
+    <div class="beats">
+      <div class="beat"><span class="t">鋪陳 0–3′</span><p>瀑布後的機關路，每一關都要一位盟友：柳寒煙的劍斷鐵索，苦禪的掌撐石門，瘦猴的小身板鑽過暗格，冷笑天的掌風吹開毒霧。義氣在這裡兌現。</p></div>
+      <div class="beat"><span class="t">衝突 3–8′</span><p>閣門大開，《天機錄》寫出二十年前的真相，也寫著盟主的假死。白先生慢慢拍手，<b>慢動作</b>撕下臉皮：司徒鎮岳（真身出場詩）。他奪走《天機策》，天機掌招招預判，盟友一個個倒下。冷笑天擋在兄弟身前，和他一起墜入深淵。</p></div>
+      <div class="beat"><span class="t">反轉 8–10′</span><p>司徒封死閣門：「明日武林大會，我將死而復生，親手為盟主討回公道——兇手，就是你們龍門一家。」</p></div>
+    </div>
+    <p class="hook">鉤子：黑暗中，奕碩的球滾進一道石縫，一束光照了進來。</p>
+    <div class="tags"><span class="tag"><b>武俠</b>易容揭面・秘笈</span><span class="tag"><b>反轉</b>白先生＝盟主</span><span class="tag"><b>亮招</b>天機掌</span></div>
+  </article>
+
+  <article class="ep"><header><span class="num">第十集</span><h3>風刀合璧</h3></header>
+    <p class="cold">開場：武林大會在龍門刀莊舉行（回到第一集的地方）。司徒鎮岳「死而復生」，群雄譁然。</p>
+    <div class="beats">
+      <div class="beat"><span class="t">鋪陳 0–3′</span><p>兄弟從石縫爬出，渾身是傷。奕叡：「我一直只信自己，結果信錯了人。這次，我信你。」兄弟定下計策：奕碩的假動作。</p></div>
+      <div class="beat"><span class="t">衝突 3–8′</span><p>司徒當眾指控兄弟，鐵無私卻站出來，拿出牢牆的刻字，並作證自己看見了燒疤。司徒出手，盟友陸續趕到：柳寒煙、苦禪、帶著村民的瘦猴，最後是三聲冷笑，冷笑天從深淵回來了（「我笑世人看不穿」）。決戰：天機掌能預判一切，奕叡便閉上眼，把出刀的時機交給弟弟。奕碩先踢出一記被預判的假球，再踢出真正的旋風球，劍氣乘著旋風而上，兄弟齊喊<b>「風刀合璧」</b>（全季最長的慢動作亮招），天機掌破，《天機策》散成滿天書頁。</p></div>
+      <div class="beat"><span class="t">反轉 8–10′</span><p>父親洗清冤屈，一家團圓。尾聲：聽雨樓換了新的說書人，是瘦猴，正在講《龍門雙奕》。一張書頁飄落到奕碩腳邊，是《天機策》的最後一頁：「雙奕出，天機變。——母留」。</p></div>
+    </div>
+    <p class="hook">第二季鉤子：「娘……還活著？」</p>
+    <div class="tags"><span class="tag"><b>成長</b>閉眼互信・合招</span><span class="tag"><b>武俠</b>假死收線（冷笑天）</span><span class="tag"><b>亮招</b>風刀合璧</span></div>
+  </article>
+</section>
+
+<section>
+  <h2>線索表</h2>
+  <p>觀眾每集都能找到一條指向白先生的線索；鐵無私、冷笑天、柳寒煙是三條紅鯡魚。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>集</th><th>線索</th><th>畫面上怎麼給</th><th>收線</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>說書人比消息早</td><td>開場說書在案發隔天清晨，鎮民後來才議論</td><td>9</td></tr>
+      <tr><td class="n">2</td><td>白先生從不和鐵無私同框</td><td>茶樓被抄時他「留下拖住」，下一鏡毫髮無傷</td><td>10（鐵無私認得盟主的臉）</td></tr>
+      <tr><td class="n">3</td><td>紙鶴折法、拿醒木的左手</td><td>刀疤放出的紙鶴＝聽雨樓戲單；鉤子只拍手</td><td>4、9</td></tr>
+      <tr><td class="n">4</td><td>刀痕是左手偽造</td><td>冷笑天看刀說破</td><td>白先生全季左手持醒木</td></tr>
+      <tr><td class="n">5</td><td>說書人會易容</td><td>他給奕叡的人皮面具做工一流</td><td>9 撕臉</td></tr>
+      <tr><td class="n">6</td><td>盟主腕上有燒疤，棺中屍體沒有</td><td>苦禪假死醒來說出</td><td>8、10</td></tr>
+      <tr><td class="n">7</td><td>說書人知道天牢換班</td><td>奕碩在台下聽出來</td><td>9</td></tr>
+      <tr><td class="n">8</td><td>只有白先生知道鑰匙今晚會齊</td><td>圍攻寒江閣；刀疤被滅口</td><td>9</td></tr>
+      <tr><td class="n">8</td><td>燒疤一閃</td><td>端茶時袖口滑落兩格畫面</td><td>9</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>天機鑰去向</h2>
+  <p>每集結束時鑰匙在誰手上。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>集</th><th>青龍</th><th>朱雀</th><th>白虎</th><th>玄武</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td class="have">兄弟（球裡）</td><td>柳寒煙</td><td>冷笑天</td><td>苦禪</td></tr>
+      <tr><td class="n">3</td><td class="have">兄弟</td><td class="fake">兄弟（假）／柳寒煙（真）</td><td>冷笑天</td><td>苦禪</td></tr>
+      <tr><td class="n">5</td><td class="have">奕叡</td><td class="fake">奕叡（假）</td><td>冷笑天</td><td>失蹤</td></tr>
+      <tr><td class="n">6</td><td class="have">奕叡</td><td class="fake">奕叡（假）</td><td>冷笑天</td><td>苦禪（假死中藏著）</td></tr>
+      <tr><td class="n">7</td><td class="have">奕叡</td><td class="fake">奕叡（假，已識破）</td><td class="have">奕叡</td><td>苦禪</td></tr>
+      <tr><td class="n">8</td><td class="have">兄弟</td><td class="have">兄弟</td><td class="have">兄弟</td><td class="have">兄弟</td></tr>
+      <tr><td class="n">9</td><td colspan="4">四鑰插進閣門，《天機策》被司徒奪走</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>招式表</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>角色</th><th>招式</th><th>首次亮招</th><th>狀態</th></tr></thead>
+    <tbody>
+      <tr><td>奕叡</td><td>一刀啟程</td><td class="n">1</td><td class="have">✓ 已完成</td></tr>
+      <tr><td>奕叡</td><td>二式斷水</td><td class="n">7</td><td>待製作</td></tr>
+      <tr><td>奕碩</td><td>旋風球</td><td class="n">1</td><td class="have">✓ 已完成</td></tr>
+      <tr><td>奕碩</td><td>落葉回旋踢</td><td class="n">6</td><td>待製作</td></tr>
+      <tr><td>奕叡＋奕碩</td><td>風刀合璧（劍氣乘旋風）</td><td class="n">10</td><td>待製作</td></tr>
+      <tr><td>冷笑天</td><td>笑盡天下</td><td class="n">3</td><td class="have">✓ 已完成</td></tr>
+      <tr><td>冷笑天</td><td>暴龍吞天</td><td class="n">9</td><td>待製作</td></tr>
+      <tr><td>柳寒煙</td><td>寒江雪劍</td><td class="n">3</td><td>待製作</td></tr>
+      <tr><td>苦禪大師</td><td>大悲掌・龜息功</td><td class="n">8・6</td><td>待製作</td></tr>
+      <tr><td>鐵無私</td><td>鐵鎖連環</td><td class="n">2</td><td>待製作</td></tr>
+      <tr><td>司徒鎮岳</td><td>天機掌・萬象歸一</td><td class="n">9</td><td>待製作</td></tr>
+      <tr><td>黑熊・刀疤</td><td>掄棍・重拳</td><td class="n">1</td><td class="have">✓ 已完成</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>製作備註（武林積木）</h2>
+  <ul>
+    <li><b>已有素材：</b>奕叡、奕碩、冷笑天、黑風寨三人，以及他們的招式；挨打反應（輕擊、重擊、擊倒）、招式相撞、身體碰撞；劇本格式（台詞、動作提示、鏡頭）和播放器。</li>
+    <li><b>要新增的角色：</b>白先生（易容面具可撕下，換成司徒鎮岳）、鐵無私、柳寒煙、小蓮、苦禪、了空、奕長風、易容殺手、村民。</li>
+    <li><b>要新增的場景：</b>龍門刀莊、聽雨樓、寒江閣與江上船陣、暴龍崖、盟主府靈堂與天牢、千佛寺、天機閣瀑布。</li>
+    <li><b>要新增的引擎功能：</b>出場詩號卡（名號大字、四句詩、定格亮相）；慢動作亮招（時間曲線，加上招式名字幕）；易容換臉與撕臉特效；開場說書段（醒木音效、茶樓固定機位）；配音；每集拉到約 10 分鐘。</li>
+    <li><b>製作順序建議：</b>先做第一集完整版，把《奕碩遇險》接上龍門刀莊的開場和球裂的結尾，同時建立出場詩號卡和慢動作亮招兩個共用功能，之後各集都用得上。</li>
+  </ul>
+</section>
+
+</div>
