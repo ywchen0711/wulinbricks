@@ -98,7 +98,7 @@ export function makeFX(scene) {
       }
       if (!S.wave && scarGlow.visible) scarGlow.material.opacity = 0;
       // the ring along the floor
-      if (S.ring) { S.ring.age += dt; const a = S.ring.age; ring.position.set(S.ring.p.x, 0.06, S.ring.p.z); ring.scale.setScalar(0.3 + a * 5); ring.material.opacity = Math.max(0, 1 - a / 0.5) * 0.9; if (a > 0.5) S.ring = null; } else ring.material.opacity = 0;
+      if (S.ring) { S.ring.age += dt; const a = S.ring.age; ring.position.set(S.ring.p.x, 0.06, S.ring.p.z); ring.scale.setScalar((0.3 + a * 5) * (S.ring.size || 1)); ring.material.opacity = Math.max(0, 1 - a / 0.5) * 0.9; if (a > 0.5) S.ring = null; } else ring.material.opacity = 0;
       // the points
       for (let i = P.length - 1; i >= 0; i--) {
         const q = P[i]; q.life -= dt; if (q.life <= 0) { P.splice(i, 1); continue; }
@@ -109,6 +109,10 @@ export function makeFX(scene) {
       pg.attributes.position.needsUpdate = pg.attributes.color.needsUpdate = true;
       S.shake = Math.max(0, S.shake - dt * 0.9);
     },
-    hitSparks(p, d) { S.shake = Math.max(S.shake, 0.3); for (let i = 0; i < 60; i++) spark(p.clone().add(new THREE.Vector3(0, (Math.random() - 0.5) * 1.4, 0)), new THREE.Vector3((Math.random() - 0.5) * 6, Math.random() * 4, (Math.random() - 0.3) * 3).addScaledVector(d, 3), 0.4 + Math.random() * 0.5, Math.random() < 0.5 ? [1.4, 1.1, 0.6] : [0.6, 1.0, 1.5], 2, 5); },
+    hitSparks(p, d, kind) { S.shake = Math.max(S.shake, 0.3); const wind = kind === 'wind'; for (let i = 0; i < 60; i++) spark(p.clone().add(new THREE.Vector3(0, (Math.random() - 0.5) * (wind ? 0.6 : 1.4), 0)), new THREE.Vector3((Math.random() - 0.5) * 6, Math.random() * 4, (Math.random() - 0.3) * 3).addScaledVector(d, 3), 0.4 + Math.random() * 0.5, wind ? (Math.random() < 0.5 ? [0.6, 0.55, 0.45] : [0.7, 1.3, 1.0]) : Math.random() < 0.5 ? [1.4, 1.1, 0.6] : [0.6, 1.0, 1.5], 2, 5); },
+    // a mote of dust, wind or light, for any move to throw about
+    puff: (p, v, life, col, drag = 1.5, grav = 0) => spark(p, v, life, col, drag, grav),
+    // a ring going out along the floor
+    ringAt(p, size = 1) { S.ring = { p: new THREE.Vector3(p.x, 0, p.z), age: 0, size }; },
   };
 }

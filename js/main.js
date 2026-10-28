@@ -11,12 +11,11 @@ import { buildStage } from './stage.js';
 import { makeTargets } from './targets.js';
 import { makeFX } from './fx.js';
 import { SFX, wake } from './sound.js';
-import { YIRUI, buildYiRui } from './cast/yirui.js';
-import { YIDAO } from './moves/yidao.js';
+import { CAST } from './cast/index.js';
+import { MOVES } from './moves/index.js';
 
 const $ = (id) => document.getElementById(id), q = new URLSearchParams(location.search);
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
-const MOVES = { yidao: YIDAO };
 let lang = q.get('lang') === 'en' ? 'en' : 'zh';
 
 // ---------------------------------------------------------------- the picture
@@ -33,8 +32,14 @@ const stage = buildStage(scene);
   const pm = new THREE.PMREMGenerator(R), es = new THREE.Scene(); es.add(stage.sky.clone()); scene.environment = pm.fromScene(es, 0.04).texture; scene.environmentIntensity = 0.55;
 }
 const targets = makeTargets(scene), fx = makeFX(scene);
-const hero = buildYiRui(), F = hero.F; scene.add(F.root);
-const CH = YIRUI;
+for (const M of Object.values(MOVES)) M.init?.(scene);
+let CH = null, hero = null, F = null;
+function cast(id) { // put a character on the practice ground
+  if (hero) hero.remove(); S.move = null; for (const M of Object.values(MOVES)) M.reset?.(); fx.reset(); if (targets.broken) targets.build();
+  CH = CAST[id] || CAST.yirui; hero = CH.build(scene); F = hero.F; free.on = false;
+  try { localStorage.setItem('wulin.cast', CH.id); } catch (e) { /* */ }
+  if (typeof texts === 'function') texts();
+}
 
 // ---------------------------------------------------------------- poses
 const DEF = { armR: -0.2, armL: -0.2, outR: 0, outL: 0, hipR: 0, hipL: 0, tilt: 0, roll: 0, yaw: 0, head: 0, fwd: 0, y: 0, wristR: 0, wristL: 0 };
@@ -53,46 +58,44 @@ function apply(p, clock, speed) {
 }
 
 // ---------------------------------------------------------------- the move being played
-const S = { move: null, t: 0, clock: 0, slow: q.has('slow'), auto: true, fired: {}, lastArm: 0 };
+const S = { move: null, t: 0, clock: 0, slow: q.has('slow'), fired: [], lastArm: 0 };
+const rate = () => (S.slow ? 0.25 : 1);
+const ctx = (p, mdt) => ({ fx, sfx: SFX, targets, hero, scene, p, t: S.t, dt: mdt, clock: S.clock, rate: rate(), V, peek });
+function peek(t) { const p = S.move ? poseAt(S.move, t) : CH.idle(S.clock).pose; apply({ ...DEF, ...p }, S.clock, 0); F.root.updateMatrixWorld(true); } // pose him at a moment, to find where things will be
 function start(id) {
   wake(); const M = MOVES[id]; if (!M) return;
   if (targets.broken) targets.build();
-  fx.reset(); S.move = M; S.t = 0; S.fired = {};
+  for (const m of Object.values(MOVES)) m.reset?.(); fx.reset(); S.move = M; S.t = 0; S.fired = [];
+  M.start?.(ctx(poseAt(M, 0), 0));
   document.querySelectorAll('[data-move]').forEach((b) => b.classList.toggle('on', b.dataset.move === id));
 }
-const rate = () => (S.slow ? 0.25 : 1);
 function step(dt) {
   S.clock += dt;
-  const M = S.move; let p, glow = 0, gather = 0, cutting = false, speed = 0, mdt = dt;
+  const M = S.move; let p, glow = 0, gather = 0, cutting = false, speed = 0, mdt = dt, rest = null;
   if (M) {
-    // a moment's stillness as the qi leaves the blade
-    const near = Math.abs(S.t - M.launch - 0.02) < 0.05; mdt = dt * rate() * (near ? 0.25 : 1); S.t += mdt;
-    const t = S.t; p = poseAt(M, t); glow = curve(M.glow, t); gather = within(M.gather, t) ? Math.sin(Math.PI * (t - M.gather[0]) / (M.gather[1] - M.gather[0])) : 0; cutting = within(M.trail, t);
+    // a moment's stillness at the move's strongest instant
+    const near = M.hitstop != null && Math.abs(S.t - M.hitstop - 0.02) < 0.05; mdt = dt * rate() * (near ? 0.25 : 1); S.t += mdt;
+    const t = S.t; p = poseAt(M, t);
+    if (M.glow) glow = curve(M.glow, t); if (M.gather && within(M.gather, t)) gather = Math.sin(Math.PI * (t - M.gather[0]) / (M.gather[1] - M.gather[0])); if (M.trail) cutting = within(M.trail, t);
     F.face(M.face(t));
-    const fire = (k, at, f) => { if (!S.fired[k] && t >= at) { S.fired[k] = true; f(); } };
-    fire('gather', M.gather[0], () => SFX.gather(rate()));
-    fire('cut', M.trail[0] + 0.06, () => SFX.cut(rate()));
-    fire('launch', M.launch, () => { SFX.launch(rate()); fx.launch(V(0, 0.95, p.fwd + 0.95), V(0, 0, 1)); });
-    speed = Math.min(1, Math.abs(p.armR - S.lastArm) / Math.max(1e-4, mdt) / 12); S.lastArm = p.armR;
-    if (t >= M.len) { S.move = null; document.querySelectorAll('[data-move]').forEach((b) => b.classList.remove('on')); }
-  } else {
-    p = poseAt(YIDAO, 0); p.y += Math.sin(S.clock * 2.1) * 0.006; p.armL += Math.sin(S.clock * 2.1) * 0.03; p.armR += Math.sin(S.clock * 1.3) * 0.02; p.head += Math.sin(S.clock * 0.4) * 0.15;
-    F.face({ browIn: 0.6, mouth: { smile: 0.15 }, blink: (S.clock % 4.3) < 0.12 ? 1 : 0 });
-  }
-  apply(p, S.clock, speed); hero.setGlow(glow);
+    speed = Math.min(1, (Math.abs(p.armR - S.lastArm) + Math.abs(p.hipR - (S.lastHip ?? p.hipR))) / Math.max(1e-4, mdt) / 12); S.lastArm = p.armR; S.lastHip = p.hipR;
+  } else { rest = CH.idle(S.clock); p = { ...DEF, ...rest.pose }; F.face(rest.face); }
+  apply(p, S.clock, speed); hero.setGlow?.(glow);
   F.root.updateMatrixWorld(true);
-  const tip = hero.tip.getWorldPosition(V()), base = hero.base.getWorldPosition(V());
-  fx.update(mdt, S.clock, { tip, base, glow, gather, cutting, feet: V(0, 0, p.fwd) });
-  const W = fx.S.wave; if (W && W.age < 1.5) targets.cut(W.p.x, W.p.z, W.d, 99, () => { SFX.hit(); fx.hitSparks(W.p, W.d); });
+  const c = ctx(p, mdt);
+  if (M) { M.events?.forEach((e, i) => { if (!S.fired[i] && S.t >= e.t) { S.fired[i] = true; e.run(c); } }); M.tick?.(c); if (S.t >= M.len) { S.move = null; document.querySelectorAll('[data-move]').forEach((b) => b.classList.remove('on')); } }
+  else CH.idleTick?.(c, rest);
+  const feet = V(0, 0, p.fwd), tip = hero.tip ? hero.tip.getWorldPosition(V()) : feet.clone().setY(0.5), base = hero.base ? hero.base.getWorldPosition(V()) : tip;
+  fx.update(mdt, S.clock, { tip, base, glow, gather, cutting, feet });
   targets.update(mdt);
   return p;
 }
 
 // ---------------------------------------------------------------- the camera: the move's own, or the viewer's
-const free = { on: false, yaw: 0, pitch: 0.2, dist: 4, target: V(0, 0.9, 1.5), ptrs: new Map(), pinch: 0 };
+var free = { on: false, yaw: 0, pitch: 0.2, dist: 4, target: V(0, 0.9, 1.5), ptrs: new Map(), pinch: 0 };
 function autoCam() {
   const M = S.move;
-  if (!M) { const a = Math.sin(S.clock * 0.18) * 0.25, c = YIDAO.cam[0]; const pos = V(...c.pos).applyAxisAngle(V(0, 1, 0), a); return { pos, look: V(...c.look), fov: c.fov }; }
+  if (!M) { const a = Math.sin(S.clock * 0.18) * 0.25, c = MOVES[CH.moves[0]].cam[0]; const pos = V(...c.pos).applyAxisAngle(V(0, 1, 0), a); return { pos, look: V(...c.look), fov: c.fov }; }
   const K = M.cam, t = S.t; let i = 0; while (i < K.length - 2 && t >= K[i + 1].t) i++;
   const a = K[i], b = K[i + 1], u = ease.smooth(Math.max(0, Math.min(1, (t - a.t) / (b.t - a.t))));
   return { pos: V(...a.pos).lerp(V(...b.pos), u), look: V(...a.look).lerp(V(...b.look), u), fov: a.fov + (b.fov - a.fov) * u };
@@ -119,26 +122,28 @@ function giveBack() { free.on = false; $('auto').classList.add('on'); }
 // ---------------------------------------------------------------- the page
 function texts() {
   document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
+  $('cast').innerHTML = Object.values(CAST).map((C) => `<button data-cast="${C.id}" class="${C.id === CH.id ? 'on' : ''}">${C.name[lang]}<small>${C.title[lang]}</small></button>`).join('');
   $('name').textContent = CH.name[lang]; $('ename').textContent = lang === 'zh' ? CH.name.en : CH.name.zh; $('title').textContent = CH.title[lang]; $('bio').textContent = CH.bio[lang];
   $('moves').innerHTML = CH.moves.map((id, i) => { const M = MOVES[id]; return `<button data-move="${id}"><b>${M.name[lang]}</b><kbd>${i + 1}</kbd><small>${M.desc[lang]}</small></button>`; }).join('');
   $('slow').textContent = lang === 'zh' ? '慢動作' : 'Slow motion'; $('reset').textContent = lang === 'zh' ? '重置靶子' : 'Reset targets'; $('auto').textContent = lang === 'zh' ? '🎬 自動鏡頭' : '🎬 Auto camera'; $('lang').textContent = lang === 'zh' ? 'EN' : '中';
-  $('hint').textContent = lang === 'zh' ? '按招式（或空白鍵）出招．拖曳畫面轉視角，滾輪縮放，雙擊回到自動鏡頭' : 'Press a move (or Space). Drag to look around, wheel to zoom, double-click for the auto camera';
+  $('hint').textContent = lang === 'zh' ? '按招式（或空白鍵）出招．Tab 換人．拖曳畫面轉視角，滾輪縮放，雙擊回到自動鏡頭' : 'Press a move (or Space). Tab changes who. Drag to look around, wheel to zoom, double-click for the auto camera';
   $('slow').classList.toggle('on', S.slow);
 }
-document.addEventListener('click', (e) => { const b = e.target.closest('[data-move]'); if (b) start(b.dataset.move); });
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-move]'); if (b) start(b.dataset.move); const c = e.target.closest('[data-cast]'); if (c && c.dataset.cast !== CH.id) cast(c.dataset.cast); });
 $('slow').onclick = () => { S.slow = !S.slow; texts(); };
 $('reset').onclick = () => { targets.build(); fx.reset(); };
 $('auto').onclick = giveBack;
 $('lang').onclick = () => { lang = lang === 'zh' ? 'en' : 'zh'; texts(); };
-addEventListener('keydown', (e) => { if (e.code === 'Space' || e.code === 'Digit1') { e.preventDefault(); start(CH.moves[0]); } if (e.code === 'KeyS') $('slow').click(); if (e.code === 'KeyR') $('reset').click(); if (e.code === 'KeyC') (free.on ? giveBack() : takeCam()); });
+addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); start(CH.moves[0]); } const n = /^Digit([1-9])$/.exec(e.code); if (n && CH.moves[n[1] - 1]) start(CH.moves[n[1] - 1]); if (e.code === 'Tab') { e.preventDefault(); const ids = Object.keys(CAST); cast(ids[(ids.indexOf(CH.id) + 1) % ids.length]); } if (e.code === 'KeyS') $('slow').click(); if (e.code === 'KeyR') $('reset').click(); if (e.code === 'KeyC') (free.on ? giveBack() : takeCam()); });
 
 let last = performance.now();
 function loop(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; step(dt); placeCamera(); comp.render(); requestAnimationFrame(loop); }
+cast(q.get('who') || (() => { try { return localStorage.getItem('wulin.cast'); } catch (e) { return null; } })() || 'yirui');
 resize(); texts(); giveBack(); requestAnimationFrame(loop);
 window.APP = {
-  hero, start, free, takeCam, giveBack, camera, S,
+  get hero() { return hero; }, cast, CAST, MOVES, start, free, takeCam, giveBack, camera, S,
   // run the move from its start to a moment, at a steady 60 frames a second, and draw it (for tests and pictures)
-  sim(t, id = 'yidao') { const sl = S.slow; S.slow = false; start(id); let n = 0; while (S.move && S.t < t && n++ < 2000) step(1 / 60); placeCamera(); comp.render(); S.slow = sl; return S.t; },
+  sim(t, id = CH.moves[0]) { const sl = S.slow; S.slow = false; start(id); let n = 0; while (S.move && S.t < t && n++ < 2000) step(1 / 60); placeCamera(); comp.render(); S.slow = sl; return S.t; },
   render() { placeCamera(); comp.render(); },
 };
 window.DONE = true;

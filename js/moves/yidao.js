@@ -13,6 +13,15 @@ export const YIDAO = {
   },
   len: 3.6,
   launch: 1.17, // the moment the qi leaves the blade
+  hitstop: 1.17,
+  // what happens, and when (ctx: fx, sfx, targets, hero, p the pose, rate)
+  events: [
+    { t: 0.3, run: (c) => c.sfx.gather(c.rate) },
+    { t: 1.04, run: (c) => c.sfx.cut(c.rate) },
+    { t: 1.17, run: (c) => { c.sfx.launch(c.rate); c.fx.launch(c.V(0, 0.95, c.p.fwd + 0.95), c.V(0, 0, 1)); } },
+  ],
+  // every frame: the crescent splits what it runs through
+  tick(c) { const W = c.fx.S.wave; if (W && W.age < 1.5) c.targets.cut(W.p.x, W.p.z, W.d, 99, () => { c.sfx.hit(); c.fx.hitSparks(W.p, W.d); }); },
   keys: [
     { t: 0.00, p: { armR: -0.55, outR: 0.12, armL: -0.95, outL: -0.25, hipR: -0.3, hipL: 0.25, tilt: 0.04, yaw: 0.35, head: -0.3 } },
     { t: 0.38, p: { armR: 0.15, outR: 0.3, armL: -1.35, outL: -0.6, hipR: -0.2, hipL: 0.35, tilt: -0.04, yaw: 0.65, head: -0.6, fwd: -0.18, y: -0.04, wristR: 0.3 } },

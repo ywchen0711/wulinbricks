@@ -51,6 +51,20 @@ export function makeTargets(scene) {
     if (any) onHit?.();
     return any;
   }
+  // a blow: whole bricks near a point thrown off it, along dir, and round it if swirl (column: only how far across counts)
+  function blast(c, r, dir, { column = false, swirl = 0 } = {}) {
+    let any = false;
+    for (let i = pieces.length - 1; i >= 0; i--) {
+      const p = pieces[i], m = p.m, mid = m.position.clone().add(new THREE.Vector3(0, p.h / 2, 0)), off = mid.clone().sub(c); if (column) off.y = 0;
+      if (off.length() > r) continue;
+      pieces.splice(i, 1); any = true; m.material = m.material.clone(); m.material.emissive = new THREE.Color('#6affc0'); m.material.emissiveIntensity = 0.35;
+      const out = mid.clone().sub(c).setZ(0); if (out.lengthSq() < 1e-4) out.set(Math.random() - 0.5, 0.5, 0); out.normalize();
+      const tan = new THREE.Vector3().crossVectors(dir, out).normalize(), k = 1 - off.length() / r * 0.5;
+      const v = out.multiplyScalar(2 + Math.random() * 2.5).addScaledVector(dir, (4 + Math.random() * 4) * k).addScaledVector(tan, swirl * (0.6 + Math.random() * 0.8)); v.y += 1.5 + Math.random() * 2.5 + (column ? mid.y * 1.2 : 0);
+      flying.push({ m, v, w: new THREE.Vector3((Math.random() - 0.5) * 12, (Math.random() - 0.5) * 12, (Math.random() - 0.5) * 12), rest: false, age: 0 });
+    }
+    return any;
+  }
   function update(dt) {
     for (const f of flying) {
       f.age += dt; if (f.m.material.emissiveIntensity > 0) f.m.material.emissiveIntensity = Math.max(0, 0.5 - f.age * 0.6);
@@ -60,5 +74,5 @@ export function makeTargets(scene) {
       if (f.m.position.y < 0.02) { f.m.position.y = 0.02; f.v.y = Math.abs(f.v.y) * 0.28; f.v.x *= 0.6; f.v.z *= 0.6; f.w.multiplyScalar(0.55); if (Math.abs(f.v.y) < 0.4 && f.v.length() < 0.5) { f.rest = true; f.m.rotation.x = Math.round(f.m.rotation.x / (Math.PI / 2)) * Math.PI / 2; f.m.rotation.z = Math.round(f.m.rotation.z / (Math.PI / 2)) * Math.PI / 2; } }
     }
   }
-  return { build, cut, update, get broken() { return flying.length > 0; } };
+  return { build, cut, blast, update, get broken() { return flying.length > 0; } };
 }

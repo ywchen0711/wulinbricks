@@ -21,6 +21,15 @@ export const YIRUI = {
     hair: { style: 'short', color: '#15100d' },
   },
   moves: ['yidao'],
+  brother: 'yishuo',
+  build: (scene) => buildYiRui(scene),
+  // at rest: on guard, breathing, glancing about
+  idle(c) {
+    return {
+      pose: { armR: -0.55 + Math.sin(c * 1.3) * 0.02, outR: 0.12, armL: -0.95 + Math.sin(c * 2.1) * 0.03, outL: -0.25, hipR: -0.3, hipL: 0.25, tilt: 0.04, yaw: 0.35, head: -0.3 + Math.sin(c * 0.4) * 0.15, y: Math.sin(c * 2.1) * 0.006 },
+      face: { browIn: 0.6, mouth: { smile: 0.15 }, blink: (c % 4.3) < 0.12 ? 1 : 0 },
+    };
+  },
 };
 
 const steel = () => new THREE.MeshPhysicalMaterial({ color: '#dfe6ee', metalness: 0.9, roughness: 0.16, clearcoat: 1, emissive: '#5ad8ff', emissiveIntensity: 0 });
@@ -30,7 +39,7 @@ function bladeGeo() { // the saber's blade, in millimetres: the spine nearly str
   const g = new THREE.ExtrudeGeometry(s, { depth: 0.3, bevelEnabled: true, bevelThickness: 0.18, bevelSize: 0.3, bevelSegments: 2, curveSegments: 16 }); g.translate(0, 0, -0.15); g.computeVertexNormals(); return g;
 }
 
-export function buildYiRui() {
+export function buildYiRui(scene) {
   const F = makeFig(YIRUI.spec), H = F.headP, B = F.body;
   const mesh = (g, m, p) => { const o = new THREE.Mesh(g, m); o.castShadow = true; o.receiveShadow = true; p.add(o); return o; };
   const hair = plastic('#15100d', { roughness: 0.42 }), silver = plastic('#c8ccd4', { metalness: 0.7, roughness: 0.25 }), band = plastic('#2f6fd0'), robe = plastic('#26335e'), dark = plastic('#22181a');
@@ -62,8 +71,9 @@ export function buildYiRui() {
   const tip = new THREE.Object3D(); tip.position.set(1.0, 26.5, 0); blade.add(tip);
   const base = new THREE.Object3D(); base.position.set(0.2, 3, 0); blade.add(base);
   void bmesh;
+  scene?.add(F.root);
   return {
-    F, tip, base, ties, tail,
+    F, tip, base, ties, tail, remove() { F.root.parent?.remove(F.root); },
     setGlow(k) { bm.emissiveIntensity = k * 2.2; halo.material.opacity = Math.min(0.6, k * 0.4); },
     // the loose things: ties and tail swing with time, and fly back when he moves fast
     sway(t, speed = 0) { ties.forEach((p, i) => { p.rotation.x = -0.35 - speed * 0.9 + Math.sin(t * 5.2 + i * 1.7) * 0.12; p.rotation.z = (i ? 1 : -1) * (0.12 + Math.sin(t * 3.1 + i) * 0.05); }); tail.rotation.x = -0.25 - speed * 0.6 + Math.sin(t * 3.4) * 0.06; },

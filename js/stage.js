@@ -20,7 +20,7 @@ export function buildStage(scene) {
   const sun = new THREE.DirectionalLight('#ffb07a', 2.6); sun.position.set(-6, 7, 14); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 12, bottom: -6, near: 1, far: 40 }); sun.shadow.bias = -0.0004; sun.target.position.set(0, 0, 4); scene.add(sun, sun.target);
   const fill = new THREE.DirectionalLight('#7a8ad8', 0.7); fill.position.set(5, 4, -6); scene.add(fill);
-  const G = new THREE.Group(); scene.add(G); const K = kit(G), R = rng(7);
+  const G = new THREE.Group(); G.position.y = -PH; scene.add(G); const K = kit(G), R = rng(7); // lowered a tile, so the paving's top is the floor (y = 0)
   K.baseplate(0, 3, 120, 110, '#3e4a2e');
   for (let x = -1.8; x <= 1.81; x += 4 * P) for (let z = -3; z <= 11.5; z += 4 * P) K.brick(x, 0, z, 4, 4, 'tile', ((Math.round(x / P) + Math.round(z / P)) / 4) % 2 ? '#7a746a' : '#6e685e'); // the paved way
   for (let i = -6; i <= 6; i++) for (let j = -4; j <= 4; j++) { const x = i * 4 * P, z = j * 4 * P; if (Math.abs(x) > 2 && Math.hypot(x, z) < 4.2) K.brick(x, 0, z, 4, 4, 'tile', '#655f56'); } // the round where he stands
