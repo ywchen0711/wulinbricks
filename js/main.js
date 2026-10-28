@@ -10,14 +10,14 @@ import { MOVES } from './moves/index.js';
 const $ = (id) => document.getElementById(id), q = new URLSearchParams(location.search);
 let lang = q.get('lang') === 'en' ? 'en' : 'zh';
 const cv = $('cv'), W = createWorld(cv), O = orbit(cv, () => $('auto').classList.remove('on'));
-const S = { mode: 'practice', who: 'yirui', slow: q.has('slow'), auto: false, autoTurn: 0, idleFor: 0 };
+const S = { mode: 'practice', who: 'yirui', slow: q.has('slow'), auto: false, autoTurn: 0, idleFor: 0, duel: [HEROES.includes(q.get('a')) ? q.get('a') : 'yirui', HEROES.includes(q.get('b')) ? q.get('b') : 'yishuo'] };
 const T = (zh, en) => (lang === 'zh' ? zh : en);
 
 // ---------------------------------------------------------------- setting the scene
 function setup(mode, who = S.who) {
   W.clear(); S.mode = mode; S.who = who; S.auto = false; O.on = false; $('auto').classList.add('on');
   if (mode === 'practice') { W.useTargets = true; W.targets.show(true); if (W.targets.broken) W.targets.build(); W.add(who, { x: 0, z: 0, yaw: 0 }); }
-  else { W.useTargets = false; W.targets.show(false); W.add('yirui', { x: 0, z: 0, yaw: 0 }); W.add('yishuo', { x: 0, z: 5.2, yaw: Math.PI }); }
+  else { W.useTargets = false; W.targets.show(false); W.add(S.duel[0], { x: 0, z: 0, yaw: 0 }); W.add(S.duel[1], { x: 0, z: 5.4, yaw: Math.PI }); }
   try { localStorage.setItem('wulin.cast', who); } catch (e) { /* */ }
   texts();
 }
@@ -53,7 +53,7 @@ function texts() {
     $('moves').innerHTML = CH.moves.map((id, i) => { const M = MOVES[id]; return `<button data-move="${id}" data-f="0"><b>${M.name[lang]}</b><kbd>${i + 1}</kbd><small>${M.desc[lang]}</small></button>`; }).join('');
     $('hint').textContent = T('按招式（或空白鍵）出招．Tab 換人．拖曳畫面轉視角，滾輪縮放，雙擊回到自動鏡頭', 'Press a move (or Space). Tab changes who. Drag to look around, wheel to zoom, double-click for the auto camera');
   } else {
-    $('duelp').innerHTML = `<h2>${T('兄弟對打', 'The brothers spar')}</h2>` + W.fighters.map((f, i) => `<div class="fr"><b>${f.CH.name[lang]}</b>${f.CH.moves.map((id) => `<button data-move="${id}" data-f="${i}">${MOVES[id].name[lang]}</button>`).join('')}
+    $('duelp').innerHTML = `<h2>${T('對打', 'Sparring')}</h2>` + W.fighters.map((f, i) => `<div class="fr"><select data-pick="${i}">${HEROES.map((id) => `<option value="${id}" ${id === f.id ? 'selected' : ''}>${CAST[id].name[lang]}</option>`).join('')}</select>${f.CH.moves.map((id) => `<button data-move="${id}" data-f="${i}">${MOVES[id].name[lang]}</button>`).join('')}
       <div class="tests"><span>${T('挨打測試', 'Take a blow')}</span><button data-test="light" data-f="${i}">${T('輕擊', 'Light')}</button><button data-test="heavy" data-f="${i}">${T('重擊', 'Heavy')}</button><button data-test="down" data-f="${i}">${T('擊倒', 'Down')}</button></div></div>`).join('')
       + `<button id="together">${T('⚔ 同時出招', '⚔ Both at once')}</button><button id="autoduel" class="${S.auto ? 'on' : ''}">${T('▶ 自動對打', '▶ Auto sparring')}</button>`;
     $('hint').textContent = T('按招式攻擊對方，或用挨打測試看被打的反應．拖曳畫面轉視角', 'Attack with a move, or try how each takes a blow. Drag to look around');
@@ -67,6 +67,7 @@ document.addEventListener('click', (e) => {
   if (e.target.id === 'together') together();
   if (e.target.id === 'autoduel') { wake(); S.auto = !S.auto; S.idleFor = 0; texts(); }
 });
+document.addEventListener('change', (e) => { const s = e.target.closest('[data-pick]'); if (s) { S.duel[+s.dataset.pick] = s.value; setup('duel'); } });
 $('slow').onclick = () => { S.slow = !S.slow; texts(); };
 $('reset').onclick = () => { W.targets.build(); W.fx.reset(); };
 $('auto').onclick = () => { O.on = false; $('auto').classList.add('on'); };

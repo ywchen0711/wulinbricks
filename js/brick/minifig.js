@@ -101,6 +101,7 @@ export function drawFace(g, f, spec) {
   const ey = 116 - (f.eyesUp || 0) * 6, ex = 62, look = f.look || [0, 0], kid = spec.age === 'kid';
   g.lineCap = 'round'; g.lineJoin = 'round';
   if ((f.blush || 0) > 0.05 || spec.cheeks) { g.fillStyle = `rgba(240,120,110,${0.25 + 0.45 * (f.blush || 0)})`; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(cx + s * 86, 160, 26, 13, 0, 0, Math.PI * 2); g.fill(); } }
+  if (spec.eyeShadow) { g.fillStyle = spec.eyeShadow; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(cx + s * ex, ey - 10, 34, 22, s * 0.25, 0, Math.PI * 2); g.fill(); } }
   for (const s of [-1, 1]) {
     const x = cx + s * ex, blink = f.blink || 0, big = f.eyes ?? 1;
     if ((f.happy || 0) > 0.5) { g.strokeStyle = ink; g.lineWidth = 9; g.beginPath(); g.arc(x, ey + 10, 16, Math.PI * 1.15, Math.PI * 1.85); g.stroke(); continue; }
@@ -128,6 +129,7 @@ export function drawFace(g, f, spec) {
   if (spec.mole) { const m = spec.mole, x = cx - (m.side ?? 1) * (m.x ?? 74), y = m.y ?? 158; g.fillStyle = '#3a2418'; g.beginPath(); g.arc(x, y, m.r ?? 7, 0, Math.PI * 2); g.fill(); }
   // the mouth: shut it is a curve that smiles or frowns; open, a dark shape the vowel shapes, teeth and tongue
   const M = f.mouth || {}, op = Math.max(0, Math.min(1, M.open || 0)), sm = M.smile ?? 0.4, rd = M.round || 0, wd = M.wide ?? 0.4, my = 186, mw = 42 + 30 * wd - 18 * rd;
+  if (op < 0.08 && f.smirk) { const k = f.smirk; g.strokeStyle = ink; g.lineWidth = 9; g.beginPath(); g.moveTo(cx + mw * 0.9, my + 4); g.quadraticCurveTo(cx - mw * 0.1, my + 6, cx - mw * 1.05, my - 26 * k); g.stroke(); g.lineWidth = 5; g.beginPath(); g.moveTo(cx - mw * 1.05, my - 26 * k); g.lineTo(cx - mw * 1.15, my - 30 * k); g.stroke(); return; }
   if (op < 0.08) { g.strokeStyle = ink; g.lineWidth = 9; g.beginPath(); g.moveTo(cx - mw, my - sm * 10); g.quadraticCurveTo(cx, my + sm * 26, cx + mw, my - sm * 10); g.stroke(); return; }
   const mh = 12 + 46 * op * (1 + 0.25 * rd);
   g.beginPath(); g.moveTo(cx - mw, my - sm * 8); g.quadraticCurveTo(cx, my + sm * 8, cx + mw, my - sm * 8); g.quadraticCurveTo(cx + mw * 0.8, my + mh, cx, my + mh + sm * 10); g.quadraticCurveTo(cx - mw * 0.8, my + mh, cx - mw, my - sm * 8); g.closePath();

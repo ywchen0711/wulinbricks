@@ -3,4 +3,5 @@
 import { YIDAO } from './yidao.js';
 import { XUANFENG } from './xuanfeng.js';
 import { PUNCH, CLUB } from './melee.js';
-export const MOVES = { yidao: YIDAO, xuanfeng: XUANFENG, punch: PUNCH, club: CLUB };
+import { XIAOJIN } from './xiaojin.js';
+export const MOVES = { yidao: YIDAO, xuanfeng: XUANFENG, xiaojin: XIAOJIN, punch: PUNCH, club: CLUB };

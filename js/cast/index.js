@@ -4,5 +4,6 @@
 import { YIRUI } from './yirui.js';
 import { YISHUO } from './yishuo.js';
 import { HEIXIONG, DAOBA, SHOUHOU } from './bandits.js';
-export const CAST = { yirui: YIRUI, yishuo: YISHUO, heixiong: HEIXIONG, daoba: DAOBA, shouhou: SHOUHOU };
-export const HEROES = ['yirui', 'yishuo']; // the ones the practice ground shows
+import { XIAOTIAN } from './xiaotian.js';
+export const CAST = { yirui: YIRUI, yishuo: YISHUO, xiaotian: XIAOTIAN, heixiong: HEIXIONG, daoba: DAOBA, shouhou: SHOUHOU };
+export const HEROES = ['yirui', 'yishuo', 'xiaotian']; // the ones the practice ground shows

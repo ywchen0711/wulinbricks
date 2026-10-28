@@ -34,6 +34,20 @@ flies back in a high arc, and he traps it under his foot.
 **Controls:** the move button, Space or 1 performs it, and Tab or the tabs at the top switch the character. Drag to look around, use the wheel or pinch to zoom, and
 double-click (or C) to get the auto camera back. S toggles slow motion, R resets the targets.
 
+## 冷笑天 Leng Xiaotian · 暴龍 The Tyrant Dragon
+
+A cold master. He wears a black robe printed with gold dragon scales over crimson, a crimson cape, long silver hair
+and a gold band with two dragon horns; his eyes are shadowed and one corner of his mouth sneers. He fights bare-handed
+with his palms. At rest he stands with his hands behind his back and his chin up.
+
+**笑盡天下 Laugh Down the World.** Three cold laughs, echoing. He draws his palms back to his hips while crimson qi
+gathers in them, then drives both forward with a shout. A great glowing palm print goes out, crimson and gold, with
+a cone of roaring wind behind it. It is wide and does not cut: it sweeps away the post and a whole stretch of the wall,
+and throws down anyone in front of it. Its power runs a little higher than the brothers' moves, so in a clash it
+usually wins.
+
+In the duel, either side can be any of the three.
+
 ## 黑風寨 The Black Wind gang
 
 They are the villains of episode 1. 黑熊 Black Bear is the bearded chief with a wooden club. 刀疤 Scar is the second,

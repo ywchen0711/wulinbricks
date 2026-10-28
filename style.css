@@ -50,3 +50,5 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #141c34; col
 #note.show { animation: note 1.6s ease-out; }
 @keyframes note { 0% { opacity: 0; transform: scale(1.6); } 12% { opacity: 1; transform: scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: scale(1.05); } }
 #together { width: calc(100% - 4px); margin-top: 10px !important; padding: 8px !important; border-color: rgba(255,210,120,.6) !important; background: rgba(255,190,90,.15) !important; }
+#duelp select { font: inherit; font-family: "Noto Serif TC", serif; font-weight: 900; font-size: 16px; color: #f4eee0; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.25); border-radius: 8px; padding: 3px 6px; margin-right: 6px; }
+#duelp select option { color: #141c34; }

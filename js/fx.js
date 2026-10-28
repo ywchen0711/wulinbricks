@@ -71,11 +71,12 @@ export function makeFX(scene) {
     },
     // each frame: where the blade is, how bright, whether the qi is being drawn in, whether the cut is on
     update(dt, t, o) {
-      const { tip, base, glow: gk, gather, cutting, feet } = o;
+      const { tip, base, glow: gk, gather, cutting, feet } = o, tint = o.tint || [0.4, 0.8, 1.2];
+      bl.color.setRGB(Math.min(1, tint[0]), Math.min(1, tint[1]), Math.min(1, tint[2])); winds.forEach((w) => w.material.color.setRGB(Math.min(1, tint[0] * 0.9), Math.min(1, tint[1] * 0.9), Math.min(1, tint[2] * 0.9)));
       // the blade's light
       bl.position.copy(tip); bl.intensity = gk * 2.5;
       // the qi drawn in: motes from all round, pulled onto the blade; the wind turning
-      if (gather > 0) for (let i = 0; i < 3; i++) { const a = Math.random() * 6.28, r = 1.2 + Math.random() * 1.2, p = new THREE.Vector3(feet.x + Math.cos(a) * r, 0.1 + Math.random() * 1.6, feet.z + Math.sin(a) * r); spark(p, new THREE.Vector3(), 0.5 + Math.random() * 0.3, [0.4, 0.8, 1.2], 0, 0, Math.random() < 0.6 ? 'tip' : 'base'); }
+      if (gather > 0) for (let i = 0; i < 3; i++) { const a = Math.random() * 6.28, r = 1.2 + Math.random() * 1.2, p = new THREE.Vector3(feet.x + Math.cos(a) * r, 0.1 + Math.random() * 1.6, feet.z + Math.sin(a) * r); spark(p, new THREE.Vector3(), 0.5 + Math.random() * 0.3, tint, 0, 0, Math.random() < 0.6 ? 'tip' : 'base'); }
       winds.forEach((w, i) => { w.position.set(feet.x, 0.12 + i * 0.22, feet.z); w.rotation.z += dt * (3 + i * 1.5) * (i % 2 ? -1 : 1); w.material.opacity = gather * (0.5 - i * 0.1); w.scale.setScalar(1 - gather * 0.15 + Math.sin(t * 7 + i) * 0.03); });
       // the trail
       if (cutting) samples.unshift([base.clone(), tip.clone(), 1]); for (const s of samples) s[2] -= dt * 5; while (samples.length > NT || (samples.length && samples[samples.length - 1][2] <= 0)) samples.pop();

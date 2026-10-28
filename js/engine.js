@@ -90,7 +90,7 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
       if (M) {
         const near = M.hitstop != null && Math.abs(f.t - M.hitstop - 0.02) < 0.05; if (near) mdt *= 0.25; f.t += mdt;
         p = poseAt(M, f.t); if (M.glow) glow = curve(M.glow, f.t); if (M.gather && within(M.gather, f.t)) gather = Math.sin(Math.PI * (f.t - M.gather[0]) / (M.gather[1] - M.gather[0])); if (M.trail) cutting = within(M.trail, f.t);
-        f.F.face(M.face(f.t)); speed = Math.min(1, (Math.abs(p.armR - f.lastArm) + Math.abs(p.hipR - f.lastHip)) / Math.max(1e-4, mdt) / 12); active = { f, glow, gather, cutting };
+        f.F.face(M.face(f.t)); speed = Math.min(1, (Math.abs(p.armR - f.lastArm) + Math.abs(p.hipR - f.lastHip)) / Math.max(1e-4, mdt) / 12); active = { f, glow, gather, cutting, tint: M.tint };
       } else {
         rest = f.CH.idle(W.clock + f.phase); p = { ...DEF, ...rest.pose }; let face = { ...rest.face };
         if (f.walk) { // walking to a point: legs and arms swinging, turned to where he goes
@@ -127,7 +127,7 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
     W._dt = dt * W.slow; resolve(W, W.proj); W.proj = [];
     const A = active || { f: W.fighters[0] };
     const h = A.f?.hero, feet = A.f ? A.f.pos.setY(0) : V(), tip = h?.tip ? h.tip.getWorldPosition(V()) : feet.clone().setY(0.5), base = h?.base ? h.base.getWorldPosition(V()) : tip;
-    fx.update(A.f?._mdt ?? dt, W.clock, { tip, base, glow: A.glow || 0, gather: A.gather || 0, cutting: !!A.cutting, feet });
+    fx.update(A.f?._mdt ?? dt, W.clock, { tip, base, glow: A.glow || 0, gather: A.gather || 0, cutting: !!A.cutting, feet, tint: A.tint });
     targets.update(dt * W.slow);
     return active;
   };
