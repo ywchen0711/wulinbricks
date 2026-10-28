@@ -10,5 +10,17 @@ export const GESTURES = {
   shrug: { len: 1.2, pose: { armR: -0.5, outR: 0.9, armL: -0.5, outL: 0.9, head: 0.2 }, face: { mouth: { smile: 0.2 }, brow: 0.6 } },
   guard: { len: 2, pose: { armR: -1.2, outR: 0.2, armL: -1.0, outL: -0.2, hipR: -0.35, hipL: 0.3, tilt: 0.08 }, face: { browIn: 1, mouth: { smile: -0.2 } } },
   scared: { len: 1.4, pose: (t) => ({ armR: -2.6, outR: 0.6, armL: -2.6, outL: 0.6, tilt: -0.15, y: Math.abs(Math.sin(t * 14)) * 0.03 }), face: { eyes: 1.4, brow: 0.8, mouth: { open: 0.9, round: 1 } } },
+  lie: { len: 99, pose: { tilt: -1.57, y: 0.15, armR: -0.4, outR: 0.9, armL: -0.4, outL: 0.9, hipR: -0.2, hipL: 0.1, head: 0.4 }, face: { blink: 1, mouth: { open: 0.15, smile: -0.2 } } }, // lying dead (or as if)
+  bound: { len: 99, pose: { armR: 0.75, outR: -0.25, armL: 0.75, outL: -0.25, tilt: 0.12, head: 0.0 }, face: { browIn: 1, mouth: { smile: -0.3 } } }, // hands bound behind him
+  sit: { len: 99, pose: (t) => ({ hipR: -1.55, hipL: -1.55, y: -0.15, tilt: -0.04, armR: -0.7, outR: 0.05, armL: -0.7, outL: 0.05, head: Math.sin(t * 0.7) * 0.15 }) },
+  sitlaugh: { len: 99, pose: (t) => ({ hipR: -1.55, hipL: -1.55, y: -0.15 + Math.abs(Math.sin(t * 10)) * 0.01, tilt: -0.12 + Math.sin(t * 10) * 0.04, armR: -0.9, outR: 0.3, armL: -0.9, outL: 0.3 }), face: { happy: 1, mouth: { open: 0.6, smile: 1 } } },
+  sitshock: { len: 99, pose: { hipR: -1.55, hipL: -1.55, y: -0.15, tilt: -0.16, armR: -1.7, outR: 0.4, armL: -1.2, outL: 0.3 }, face: { eyes: 1.4, brow: 0.8, mouth: { open: 0.7, round: 1 } } },
+  pick: { len: 1.2, pose: (t) => { const k = Math.sin(Math.min(1, t / 1.2) * Math.PI); return { tilt: 0.75 * k, y: -0.12 * k, armR: -0.4 - 0.9 * k, outR: 0.05, hipR: -0.6 * k, hipL: 0.5 * k }; } }, // bending to pick something up
+  look: { len: 2.5, pose: { armR: -1.25, outR: -0.25, armL: -0.3, tilt: 0.12, head: 0 }, face: { eyes: 1.25, brow: 0.5, mouth: { open: 0.2, round: 0.8 } } }, // something held up before his eyes
+  tap: { len: 0.9, pose: (t) => { const k = t < 0.35 ? t / 0.35 : Math.max(0, 1 - (t - 0.35) / 0.2); return { armL: -1.0 - 1.4 * k, outL: -0.2, armR: -0.9, outR: -0.2, tilt: -0.05 * k }; } }, // the clapper brought down on the desk
+  tell: { len: 99, pose: (t) => ({ armR: -1.2 + Math.sin(t * 2.4) * 0.25, outR: -0.15 + Math.sin(t * 1.3) * 0.2, wristR: Math.sin(t * 2.4) * 0.5, armL: -0.9, outL: -0.15, head: Math.sin(t * 0.6) * 0.35, tilt: Math.sin(t * 0.9) * 0.04 }) }, // telling the tale, fan going
+  kneel: { len: 99, pose: { hipR: -1.4, hipL: 0.2, y: -0.2, tilt: 0.1, armR: -0.6, armL: -0.6 } },
+  grab: { len: 99, pose: { armR: -1.3, outR: -0.3, armL: -1.3, outL: -0.3, tilt: 0.12 } }, // holding someone
+  bow: { len: 1.6, pose: (t) => ({ armR: -1.15, outR: -0.35, armL: -1.15, outL: -0.35, wristR: 0.4, tilt: 0.28 * Math.sin(Math.min(1, t / 1.6) * Math.PI) }) }, // a fist in a palm, bowed
   laugh: { len: 1.6, pose: (t) => ({ tilt: -0.15 + Math.sin(t * 12) * 0.05, armR: 0.25, outR: 0.7, armL: 0.25, outL: 0.7 }), face: { happy: 1, mouth: { open: 0.7, wide: 0.9, smile: 1 } } },
 };

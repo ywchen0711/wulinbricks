@@ -26,7 +26,7 @@ export function resolve(W, list) {
   // bodies against each other
   const F = W.fighters;
   for (let i = 0; i < F.length; i++) for (let j = i + 1; j < F.length; j++) {
-    const a = F[i], b = F[j]; if (lying(a) || lying(b)) continue;
+    const a = F[i], b = F[j]; if (lying(a) || lying(b) || a.hidden || b.hidden || a.gesture?.G.len === 99 || b.gesture?.G.len === 99) continue;
     const pa = a.F.root.position, pb = b.F.root.position, d = V(pb.x - pa.x, 0, pb.z - pa.z), L = d.length(), min = bodyR(a) + bodyR(b);
     if (L >= min || L < 1e-5) continue;
     const n = d.divideScalar(L), over = min - L;
@@ -53,7 +53,7 @@ export function ballStep(ball, st, dt, W, R) {
   v.y -= 9.8 * dt; p.addScaledVector(v, dt);
   if (p.y < R) { p.y = R; if (v.y < -0.8) { v.y = -v.y * 0.55; W.sfx.bounce?.(); } else v.y = 0; v.x *= 1 - Math.min(1, 1.4 * dt); v.z *= 1 - Math.min(1, 1.4 * dt); }
   for (const f of W.fighters) {
-    if (lying(f)) continue; const fp = f.F.root.position, d = V(p.x - fp.x, 0, p.z - fp.z), L = d.length(), min = bodyR(f) + R;
+    if (lying(f) || f.hidden) continue; const fp = f.F.root.position, d = V(p.x - fp.x, 0, p.z - fp.z), L = d.length(), min = bodyR(f) + R;
     if (L >= min || p.y > f.F.height * 0.9 || L < 1e-5) continue;
     const n = d.divideScalar(L), vn = v.x * n.x + v.z * n.z; p.x = fp.x + n.x * min; p.z = fp.z + n.z * min;
     if (vn < 0) { const speed = Math.hypot(v.x, v.z); v.x -= 1.5 * vn * n.x; v.z -= 1.5 * vn * n.z; v.multiplyScalar(0.6); if (speed > 5 && f !== st.owner && !f.react) f.hit({ kind: 'light', dir: n.clone().multiplyScalar(-1), at: p.clone(), fx: 'bump' }); }

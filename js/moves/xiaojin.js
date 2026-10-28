@@ -81,7 +81,7 @@ export const XIAOJIN = {
   reset() { if (this._g) this._g.G.visible = false; this._p = null; },
   launch(c) {
     c.sfx.palm(c.rate); const from = c.toWorld(V(0, 0.95, c.p.fwd + 0.75)), d = c.dirWorld(V(0, 0, 1));
-    this._p = { p: from, from: from.clone(), d, age: 0, power: 1.0 + Math.random() * 0.4, size: 1, id: 'palm' + Math.random(), hit: [], owner: c.me, dead: false, shrink: 1 };
+    this._p = { p: from, from: from.clone(), d, age: 0, power: c.me.power ?? 1.0 + Math.random() * 0.4, size: 1, id: 'palm' + Math.random(), hit: [], owner: c.me, dead: false, shrink: 1 };
     c.fx.ringAt(c.toWorld(V(0, 0, c.p.fwd + 0.4)), 1.4); c.fx.S.shake = Math.max(c.fx.S.shake, 0.4);
   },
   tick(c) {

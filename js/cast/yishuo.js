@@ -23,7 +23,8 @@ export const YISHUO = {
     robe: { inner: '#f4f0e6', trim: '#f2c23a', belt: '#26335e', tassel: '#3ab08a', ink: 'rgba(255,220,180,0.16)' },
     hair: { style: 'spiky', color: '#15100d' },
   },
-  moves: ['xuanfeng'],
+  poem: { zh: ['腳下生風不讓人，', '一球踢散滿天雲；', '江湖莫笑年紀小，', '旋風起處見真心。'], en: ['Wind at his feet, he yields to no one;', 'one kick scatters a sky of clouds;', 'laugh not at his years, rivers and lakes —', 'where the whirlwind rises, his true heart shows.'] },
+  moves: ['xuanfeng', 'kick'],
   brother: 'yirui',
   build: (scene) => buildYiShuo(scene),
   // at rest: keepy-uppy, three touches off the right foot, then the ball rests in front of it
@@ -82,6 +83,8 @@ export function buildYiShuo(scene) {
     spinBall(a, axis) { bm.rotateOnWorldAxis(axis.clone().normalize(), a); },
     sway(t, speed = 0) { ties.forEach((p, i) => { p.rotation.x = -0.35 - speed * 0.9 + Math.sin(t * 5.6 + i * 1.7) * 0.14; p.rotation.z = (i ? 1 : -1) * (0.14 + Math.sin(t * 3.3 + i) * 0.05); }); },
     setGlow() {},
+    // the ball split along a seam (a dark gash in it)
+    crack() { if (H2.cracked) return; H2.cracked = true; const g = new THREE.Mesh(new THREE.TorusGeometry(BALL_R * 1.0, BALL_R * 0.12, 6, 24, Math.PI * 0.9), new THREE.MeshBasicMaterial({ color: '#1a0e08' })); g.rotation.set(0.3, 0.2, 0); bm.add(g); },
     // a loose ball runs under its own physics, whatever he is doing
     physics(dt, W, f) { if (!H2.loose) return; H2.loose.owner ||= f; ballStep(ball, H2.loose, dt, W, BALL_R); const v = H2.loose.v; if (v.lengthSq() > 1e-4) H2.spinBall(H2.loose.spin * dt, V(v.z, 0, -v.x)); },
   };

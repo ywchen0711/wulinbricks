@@ -2,6 +2,27 @@
 // leaving (a deep thump and a ringing), its flight (a tearing whoosh), and bricks split and falling (cracks, clatter).
 let ac = null, out = null, muted = false;
 export const mute = (b) => { muted = b; };
+export const audio = () => ({ ac, out });
+// the sound of a place, looped quietly under a scene: rain, a night of crickets, wind on the road, birds in a yard
+let amb = null;
+function loopBuffer(kind) {
+  const sr = ac.sampleRate, n = sr * 4, b = ac.createBuffer(1, n, sr), d = b.getChannelData(0);
+  let lp = 0;
+  for (let i = 0; i < n; i++) {
+    const w = Math.random() * 2 - 1, t = i / sr;
+    if (kind === 'rain') { lp += (w - lp) * 0.35; d[i] = lp * 0.5 + (Math.random() < 0.0016 ? (Math.random() - 0.5) * 0.9 : 0); }
+    else if (kind === 'wind') { lp += (w - lp) * 0.02; d[i] = lp * 2.2 * (0.6 + 0.4 * Math.sin(t * 1.3) * Math.sin(t * 0.7)); }
+    else if (kind === 'night') { lp += (w - lp) * 0.01; const ch = ((t * 3.1) % 1 < 0.18 ? Math.sin(t * 2 * Math.PI * 4200) * Math.max(0, Math.sin(((t * 3.1) % 1) / 0.18 * Math.PI)) * 0.12 : 0) + ((t * 2.3 + 0.4) % 1 < 0.12 ? Math.sin(t * 2 * Math.PI * 3700) * 0.08 : 0); d[i] = lp * 0.8 + ch; }
+    else if (kind === 'birds') { lp += (w - lp) * 0.015; const ph = (t * 0.9) % 1, chirp = ph < 0.08 ? Math.sin(2 * Math.PI * (2600 + 1800 * ph / 0.08) * t) * 0.12 * Math.sin(ph / 0.08 * Math.PI) : 0; d[i] = lp * 0.5 + chirp; }
+    else d[i] = 0;
+  }
+  return b;
+}
+export function ambience(kind) {
+  if (!ac) return; if (amb) { const a = amb; a.g.gain.setTargetAtTime(0.0001, ac.currentTime, 0.3); setTimeout(() => a.s.stop(), 1500); amb = null; }
+  if (!kind || muted) return;
+  const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = loopBuffer(kind); s.loop = true; g.gain.value = 0.0001; g.gain.setTargetAtTime({ rain: 0.35, wind: 0.3, night: 0.4, birds: 0.3 }[kind] || 0.3, ac.currentTime, 0.6); s.connect(g).connect(out); s.start(); amb = { s, g };
+}
 export function wake() { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); out = ac.createGain(); out.gain.value = 0.5; const c = ac.createDynamicsCompressor(); out.connect(c).connect(ac.destination); } if (ac.state === 'suspended') ac.resume(); }
 const now = () => ac.currentTime;
 function noise(dur, { at = 0, f0 = 800, f1 = 800, q = 1, vol = 0.4, type = 'bandpass', a = 0.01 } = {}) {
@@ -16,6 +37,12 @@ function tone(f0, f1, dur, { at = 0, vol = 0.3, type = 'sine', a = 0.01 } = {}) 
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g).connect(out); o.start(t); o.stop(t + dur + 0.05);
 }
 export const SFX = {
+  ambience: (k) => ambience(k),
+  gavel() { if (!ac) return; tone(900, 600, 0.08, { vol: 0.6, type: 'square' }); noise(0.12, { f0: 2500, f1: 1200, q: 2, vol: 0.6, a: 0.002 }); tone(180, 120, 0.15, { vol: 0.5, type: 'triangle' }); },
+  scream() { if (!ac || muted) return; const t = now(), o = ac.createOscillator(), b = ac.createBiquadFilter(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(700, t); o.frequency.linearRampToValueAtTime(1100, t + 0.25); o.frequency.exponentialRampToValueAtTime(420, t + 1.1); b.type = 'bandpass'; b.frequency.value = 1500; b.Q.value = 2.5; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2); o.connect(b).connect(g).connect(out); o.start(t); o.stop(t + 1.3); },
+  crash() { if (!ac) return; noise(0.5, { f0: 3000, f1: 800, q: 0.8, vol: 0.5 }); for (let i = 0; i < 8; i++) noise(0.06, { at: 0.05 + Math.random() * 0.4, f0: 2000 + Math.random() * 3000, f1: 1500, q: 5, vol: 0.15, a: 0.003 }); },
+  gong(k = 1) { if (!ac) return; tone(110, 100, 2.2, { vol: 0.35 * k, type: 'sine', a: 0.01 }); tone(165, 150, 1.8, { vol: 0.15 * k }); tone(330, 310, 1.2, { vol: 0.08 * k }); noise(0.2, { f0: 600, f1: 300, q: 1, vol: 0.2 * k }); },
+  steps(k = 1) { if (!ac) return; for (let i = 0; i < 6; i++) noise(0.05, { at: i * 0.16, f0: 500, f1: 300, q: 1.5, vol: 0.12 * k, a: 0.004 }); },
   clash(k = 1) { if (!ac) return; tone(70, 30, 0.9, { vol: 0.9 * k }); noise(0.6, { f0: 3000, f1: 200, q: 0.6, vol: 0.6 * k, type: 'lowpass' }); tone(1320, 1250, 1.0, { vol: 0.08, at: 0.02 }); tone(1980, 1900, 0.8, { vol: 0.05, at: 0.02 }); noise(1.1, { at: 0.05, f0: 1500, f1: 300, q: 2, vol: 0.2, a: 0.2 }); },
   // a cold laugh: ha, ha, ha, falling, through a mouth-like filter, echoing
   laugh(rate = 1) { if (!ac || muted) return; const t0 = now(), dl = ac.createDelay(1), fb = ac.createGain(), wet = ac.createGain(); dl.delayTime.value = 0.23; fb.gain.value = 0.35; wet.gain.value = 0.5; dl.connect(fb).connect(dl); dl.connect(wet).connect(out);

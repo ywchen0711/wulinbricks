@@ -81,7 +81,7 @@ export const XUANFENG = {
   start(c) {
     const h = c.hero; c.peek(KICK); this._C = c.toLocal(h.instep()).add(V(0, BALL_R * 0.9, BALL_R * 0.9)); c.peek(0); this._from = h.toe(0.2);
     let foe = null, best = 1e9; for (const f of c.foes) { const l = c.toLocal(f.pos); if (l.z > 0.8 && Math.abs(l.x) < 1.0 && l.z < best) { best = l.z; foe = f; } }
-    h.loose = null; if (!h.fetching) h.home = { ...c.me.mark }; this._s = { power: 0.8 + Math.random() * 0.4, id: 'ball' + Math.random(), loose: false, post: false, wall: false, wallAt: null, foe, end: foe ? best - 0.28 : WALL, endY: foe ? (foe.CH.spec.age === 'kid' ? 0.55 : 0.8) : 0.85 };
+    h.loose = null; if (!h.fetching) h.home = { ...c.me.mark }; this._s = { power: c.me.power ?? 0.8 + Math.random() * 0.4, id: 'ball' + Math.random(), loose: false, post: false, wall: false, wallAt: null, foe, end: foe ? best - 0.28 : WALL, endY: foe ? (foe.CH.spec.age === 'kid' ? 0.55 : 0.8) : 0.85 };
   },
   events: [
     { t: 0.3, run: (c) => c.sfx.flick() },

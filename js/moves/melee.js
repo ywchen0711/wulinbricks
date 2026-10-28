@@ -31,3 +31,17 @@ export const CLUB = {
   cam: [{ t: 0, pos: [1.8, 1.3, 2.2], look: [0, 0.9, 0.8], fov: 42 }, { t: 1.5, pos: [1.8, 1.3, 2.2], look: [0, 0.9, 0.8], fov: 42 }],
   events: [{ t: 0.55, run: (c) => c.sfx.swing(1) }, { t: 0.66, run: (c) => hitFront(c, { reach: 1.55, power: 0.95, width: 0.8 }) }],
 };
+export const KICK = {
+  id: 'kick', name: { zh: '踢球', en: 'A kick' }, desc: { zh: '隨腳一踢。', en: 'Just a kick.' }, len: 0.9,
+  keys: [
+    { t: 0.0, p: { armR: 0.1, outR: 0.28, armL: -0.1, outL: 0.28, hipR: -0.15, hipL: 0.1, yaw: 0.15 } },
+    { t: 0.25, p: { armR: 0.3, outR: 0.4, armL: -0.4, outL: 0.4, hipR: 0.7, hipL: 0.0, tilt: 0.08, yaw: 0.1 } },
+    { t: 0.38, ease: 'in', p: { armR: -0.3, outR: 0.4, armL: 0.3, outL: 0.4, hipR: -1.2, hipL: 0.15, tilt: -0.12, yaw: 0.0, fwd: 0.08 } },
+    { t: 0.9, p: { armR: 0.1, outR: 0.28, armL: -0.1, outL: 0.28, hipR: -0.15, hipL: 0.1, yaw: 0.15, fwd: 0 } },
+  ],
+  face: (t) => (t < 0.3 ? { mouth: { smile: 0.6 }, browIn: 0.5 } : { happy: 1, mouth: { open: 0.5, smile: 1 } }),
+  cam: [{ t: 0, pos: [1.6, 0.8, 2.0], look: [0, 0.4, 1.0], fov: 42 }, { t: 0.9, pos: [1.6, 0.8, 2.0], look: [0, 0.4, 1.5], fov: 42 }],
+  start(c) { const h = c.hero; if (h.loose) { h.loose = null; } },
+  events: [{ t: 0.38, run: (c) => { const h = c.hero; if (!h.ball) return; c.sfx.bounce(); h.home = { ...c.me.mark }; const up = c.me.kickUp ?? 3.2, sp = c.me.kickSpeed ?? 5.5; h.loose = { v: c.dirWorld(c.V(0, 0, 1)).multiplyScalar(sp).add(c.V(0, up, 0)), owner: c.me, spin: 0 }; } }],
+  tick(c) { const h = c.hero; if (c.t < 0.38 && h.ball && !h.loose) h.ballAt(h.toe(0.2)); },
+};

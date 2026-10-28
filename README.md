@@ -3,7 +3,7 @@
 The people of the martial world as brick minifigures, one at a time, each with their moves. Each one stands on a
 practice ground at dusk, where you can watch their moves performed in 3D.
 
-**Live:** https://ywchen0711.github.io/wulinbricks/ · **Episode 1:** https://ywchen0711.github.io/wulinbricks/film.html
+**Live:** https://ywchen0711.github.io/wulinbricks/ · **《龍門雙奕》第一集 龍門血案:** https://ywchen0711.github.io/wulinbricks/film.html · the first test film: film.html?ep=proto · the season plan: [docs/season1.html](docs/season1.html)
 
 The page has three modes. **Practice** shows one character on the practice ground, trying moves on a post and a
 wall. **Duel** puts the brothers face to face to spar, with buttons to try a light hit, a heavy hit or a knockdown
@@ -54,7 +54,30 @@ They are the villains of episode 1. 黑熊 Black Bear is the bearded chief with 
 with a scar across his eye and a broadsword. 瘦猴 Skinny Monkey is the quick lackey. Their moves are 重拳 Heavy
 Punch and 掄棍 Club Swing.
 
-## 第一集 奕碩遇險 Episode 1: Yi Shuo in Trouble
+## 《龍門雙奕》第一集 龍門血案 Episode 1: Blood at Longmen (about 7½ minutes, voiced)
+
+- **Cold open.** In the Listening-to-Rain teahouse, Master Bai the storyteller tells the town that the Alliance chief
+  died last night at the Longmen Manor. He tells it before anyone else knows.
+- **The day before, at the manor.** The father teaches Yi Rui the saber, and Yi Shuo smashes a lantern with his ball.
+  The brothers spar, blade against ball, and cancel out. The father mends the ball: "this ball matters more than
+  your life." The chief arrives with Tie Wusi of the Law Hall.
+- **That night.** A shadow crosses the wall, then a scream: the chief lies dead with a Longmen cut. The father is
+  seized: "Take your brother and go."
+- **At dawn on the road.** The bandits come for the ball (the test film below) and Yi Rui saves his brother. A Law
+  Hall token is dropped, and the split ball holds a jade carved with a green dragon. Three cold laughs come from the
+  hill.
+
+New for it:
+
+- the Longmen Manor and teahouse sets, and day, dusk, night and dawn light;
+- the father, Tie Wusi, the chief, Master Bai, guards and listeners;
+- entrance cards with each character's four-line poem;
+- move callouts and slow-motion strikes;
+- recorded voices with mouths that follow them;
+- props;
+- a camera that lifts bricks or people out of its way.
+
+## The test film 奕碩遇險 Yi Shuo in Trouble (film.html?ep=proto)
 
 At dusk, outside the village, Yi Shuo is playing ball when the Black Wind come and want it. His Whirlwind Ball
 knocks Skinny Monkey flat, but Scar's fist and Black Bear's club put him on the ground. As the club goes up again,
@@ -100,7 +123,9 @@ round.
 | `js/engine.js` | the world: fighters with marks, walking, turning, gestures, moves, blows, the camera |
 | `js/physics.js` | blows that meet (cancel or break through), bodies that can't overlap, the loose ball |
 | `js/react.js`, `js/gestures.js` | taking a blow; small actions for films (point, raise, cower, cheer...) |
-| `js/films/*.js`, `js/film.js` | an episode (cast and marks, lines, cues, shots) and its player |
+| `js/films/*.js`, `js/film.js` | an episode, scene by scene (set, hour, who stands where, lines, cues, shots), and its player |
+| `js/sets.js`, `js/props.js` | the Longmen Manor and the teahouse; the token, the jade |
+| `tools/lines.mjs`, `tools/voices.py` | record an episode's lines in the characters' voices; a line that runs long pushes the rest of its scene back |
 | `js/stage.js` | the practice ground at dusk |
 | `js/sound.js` | the move's synthesised sounds |
 

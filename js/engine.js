@@ -35,7 +35,7 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
   R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.05; R.outputColorSpace = THREE.SRGBColorSpace;
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(40, 16 / 9, 0.05, 200);
   const comp = new EffectComposer(R); comp.addPass(new RenderPass(scene, camera)); comp.addPass(new UnrealBloomPass(new THREE.Vector2(512, 512), 0.55, 0.45, 0.92)); comp.addPass(new OutputPass());
-  const stage = buildStage(scene);
+  const stage = buildStage(scene, R);
   { const pm = new THREE.PMREMGenerator(R), es = new THREE.Scene(); es.add(stage.sky.clone()); scene.environment = pm.fromScene(es, 0.04).texture; scene.environmentIntensity = 0.55; }
   const targets = makeTargets(scene), fx = makeFX(scene);
   targets.show(withTargets);
@@ -59,7 +59,7 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
       // a blow: { power 0..1 (or kind), dir (world), at (world point), hold: stay down until released }
       hit(h) {
         const kind = h.kind || weightOf(h.power ?? 0.5); if (f.move) { f.move.reset?.(); f.move = null; } f.walk = null; f.gesture = null;
-        f.react = { kind, t: 0, dir: (h.dir || f.dirWorld(V(0, 0, -1))).clone().setY(0).normalize(), hold: !!h.hold, from: f.push.clone() };
+        f.react = { kind, t: 0, dir: (h.dir || f.dirWorld(V(0, 0, -1))).clone().setY(0).normalize(), hold: !!h.hold || (kind === 'down' && !!f.stayDown), from: f.push.clone() };
         const at = h.at || f.pos.add(V(0, 0.8, 0)); fx.hitSparks(at, f.react.dir, h.fx); fx.ringAt(at, kind === 'down' ? 1 : 0.6); fx.S.shake = Math.max(fx.S.shake, kind === 'down' ? 0.35 : 0.22);
         W.freeze = kind === 'light' ? 0.05 : 0.11; SFX.thud(kind === 'down' ? 1 : kind === 'heavy' ? 0.7 : 0.4); SFX.ouch(CH.spec.age === 'kid', kind); flash(f);
       },
@@ -67,16 +67,17 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
       walkTo(x, z, { speed = 1.3, face } = {}) { f.walk = { to: V(x, 0, z), speed, face }; f.move = null; },
       gest(name, { hold = false, len } = {}) { const G = GESTURES[name]; if (G) f.gesture = { G, t: 0, hold, len: len ?? G.len ?? 1.2 }; },
       say(on) { f.talk = on ? 1 : 0; },
+      show(on) { f.F.root.visible = on; if (f.hero.ball) f.hero.ball.visible = on; f.hidden = !on; },
       remove() { hero.remove(); W.fighters.splice(W.fighters.indexOf(f), 1); },
     };
     W.fighters.push(f); return f;
   };
   function flash(f) { if (!f._mats) { f._mats = []; f.F.root.traverse((o) => { if (o.material && !Array.isArray(o.material) && o.material.emissive && o.material.emissive.getHex() === 0 && !f._mats.includes(o.material)) f._mats.push(o.material); }); } f._flash = 0.16; }
-  const ctx = (f, mdt) => ({ fx, sfx: SFX, targets: W.useTargets ? targets : null, hero: f.hero, scene, p: f.p, t: f.t, dt: mdt, clock: W.clock, rate: W.slow, V, me: f, foes: W.fighters.filter((g) => g !== f && g.team !== f.team && !(g.react?.kind === 'down')), toWorld: f.toWorld, toLocal: f.toLocal, dirWorld: f.dirWorld, world: W, projectile: (o) => W.proj.push(o),
+  const ctx = (f, mdt) => ({ fx, sfx: SFX, targets: W.useTargets ? targets : null, hero: f.hero, scene, p: f.p, t: f.t, dt: mdt, clock: W.clock, rate: W.slow, V, me: f, foes: W.fighters.filter((g) => g !== f && g.team !== f.team && !g.hidden && !(g.react?.kind === 'down')), toWorld: f.toWorld, toLocal: f.toLocal, dirWorld: f.dirWorld, world: W, projectile: (o) => W.proj.push(o),
     peek(t) { const p = f.move ? poseAt(f.move, t) : f.CH.idle(W.clock).pose; apply(f, { ...DEF, ...p }, 0); f.F.root.updateMatrixWorld(true); } });
   function apply(f, p, speed) {
     const w = f.toWorld(V(0, 0, p.fwd)).add(f.push);
-    f.F.pose({ x: w.x, y: p.y, z: w.z, yaw: f.mark.yaw + p.yaw, tilt: p.tilt, roll: p.roll, hipR: p.hipR, hipL: p.hipL, armR: p.armR, armL: p.armL, outR: p.outR, outL: p.outL, wristR: p.wristR, wristL: p.wristL, head: p.head });
+    f.F.pose({ x: w.x, y: p.y + (f.mark.y || 0), z: w.z, yaw: f.mark.yaw + p.yaw, tilt: p.tilt, roll: p.roll, hipR: p.hipR, hipL: p.hipL, armR: p.armR, armL: p.armL, outR: p.outR, outL: p.outL, wristR: p.wristR, wristL: p.wristL, head: p.head });
     f.hero.sway(W.clock, speed);
   }
 
@@ -106,7 +107,8 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
         if ((f.gesture || f.still) && rest.ball) rest.ball = { rest: true };
         if (f.gesture) { const g = f.gesture, k = Math.min(1, g.t / 0.25) * (g.hold ? 1 : Math.min(1, (g.len - g.t) / 0.3)); const gp = typeof g.G.pose === 'function' ? g.G.pose(g.t) : g.G.pose; for (const key in gp) p[key] = p[key] + (gp[key] - p[key]) * Math.max(0, k); if (g.G.face) face = g.G.face; g.t += mdt; if (!g.hold && g.t >= g.len) f.gesture = null; }
         if (f.mood) face = { ...face, ...f.mood };
-        if (f.talk) face.mouth = { ...(face.mouth || {}), open: Math.max(0, Math.sin(W.clock * 17) * 0.5 + Math.sin(W.clock * 11) * 0.3) };
+        if (typeof f.talk === 'number' && f.voice) face.mouth = { ...(face.mouth || {}), open: Math.min(1, f.talk * 1.3) };
+        else if (f.talk) face.mouth = { ...(face.mouth || {}), open: Math.max(0, Math.sin(W.clock * 17) * 0.5 + Math.sin(W.clock * 11) * 0.3) };
         f.F.face(face);
       }
       // a blow taken, over everything
@@ -124,6 +126,7 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
     }
     // loose things under their own physics, then whatever has met
     for (const f of W.fighters) f.hero.physics?.(dt * W.slow, W, f);
+    for (const s of Object.values(stage.sets)) s.tick?.(dt);
     W._dt = dt * W.slow; resolve(W, W.proj); W.proj = [];
     const A = active || { f: W.fighters[0] };
     const h = A.f?.hero, feet = A.f ? A.f.pos.setY(0) : V(), tip = h?.tip ? h.tip.getWorldPosition(V()) : feet.clone().setY(0.5), base = h?.base ? h.base.getWorldPosition(V()) : tip;
@@ -135,7 +138,21 @@ export function createWorld(canvas, { targets: withTargets = true } = {}) {
   // ---------------------------------------------------------------- the camera
   // a move's own camera, in the mover's frame
   W.moveCam = (f) => { const M = f.move, K = M.cam, t = f.t; let i = 0; while (i < K.length - 2 && t >= K[i + 1].t) i++; const a = K[i], b = K[i + 1], u = ease.smooth(Math.max(0, Math.min(1, (t - a.t) / (b.t - a.t)))); return { pos: f.toWorld(V(...a.pos).lerp(V(...b.pos), u)), look: f.toWorld(V(...a.look).lerp(V(...b.look), u)), fov: a.fov + (b.fov - a.fov) * u }; };
-  W.place = (c) => { const sh = fx.S.shake * 0.12; camera.position.copy(c.pos).add(V((Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh, 0)); camera.lookAt(c.look); camera.fov = c.fov || 40; camera.updateProjectionMatrix(); };
+  const ray = new THREE.Raycaster(), ZERO = new THREE.Matrix4().makeScale(0, 0, 0), lifted = []; let bricks = null;
+  const unlift = () => { for (const [im, id, m] of lifted) { im.setMatrixAt(id, m); im.instanceMatrix.needsUpdate = true; } lifted.length = 0; };
+  W.clearView = true;
+  function clearView(pos, look) {
+    unlift(); if (!W.clearView) return;
+    // the sets' bricks (not the studs of the baseplates)
+    bricks ||= (() => { const out = []; scene.traverse((o) => { if (o.isInstancedMesh && o.userData.key) out.push(o); }); return out; })();
+    const side = V().subVectors(pos, look).cross(V(0, 1, 0)).normalize();
+    for (const [sx, sy] of [[0, 0], [0.32, 0], [-0.32, 0], [0, 0.4], [0, -0.45]]) {
+      const from = look.clone().addScaledVector(side, sx).add(V(0, sy, 0)), dir = pos.clone().sub(from), len = dir.length(); if (len < 0.3) continue; dir.normalize();
+      ray.set(from, dir); ray.far = len - 0.05;
+      for (const h of ray.intersectObjects(bricks, false)) { if (h.instanceId == null) continue; const m = new THREE.Matrix4(); h.object.getMatrixAt(h.instanceId, m); lifted.push([h.object, h.instanceId, m]); h.object.setMatrixAt(h.instanceId, ZERO); h.object.instanceMatrix.needsUpdate = true; }
+    }
+  }
+  W.place = (c) => { clearView(c.pos, c.look); const sh = fx.S.shake * 0.12; stage.sky.position.copy(c.pos); camera.position.copy(c.pos).add(V((Math.random() - 0.5) * sh, (Math.random() - 0.5) * sh, 0)); camera.lookAt(c.look); camera.fov = c.fov || 40; camera.updateProjectionMatrix(); };
   W.render = () => comp.render();
   W.resize = (w = innerWidth, h = innerHeight) => { const d = Math.min(2, devicePixelRatio || 1); R.setPixelRatio(d); R.setSize(w, h, false); comp.setPixelRatio(d); comp.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); };
   W.clear = () => { while (W.fighters.length) W.fighters[0].remove(); fx.reset(); W._clashed.clear(); W.proj = []; for (const M of Object.values(MOVES)) M.reset?.(); };

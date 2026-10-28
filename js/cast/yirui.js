@@ -20,6 +20,7 @@ export const YIRUI = {
     robe: { inner: '#eef0f4', trim: '#c8d4ea', belt: '#18181f', tassel: '#3ab08a', ink: 'rgba(200,215,240,0.16)' },
     hair: { style: 'short', color: '#15100d' },
   },
+  poem: { zh: ['孤刀一柄出龍門，', '不問前程問本心；', '縱使天下皆疑我，', '一刀啟程萬里新。'], en: ['One lone blade goes out of Longmen,', 'asking not the road ahead but his own heart;', 'though all the world should doubt him,', 'one cut, and ten thousand miles begin anew.'] },
   moves: ['yidao'],
   brother: 'yishuo',
   build: (scene) => buildYiRui(scene),

@@ -18,7 +18,7 @@ export const YIDAO = {
   events: [
     { t: 0.3, run: (c) => c.sfx.gather(c.rate) },
     { t: 1.04, run: (c) => c.sfx.cut(c.rate) },
-    { t: 1.17, run: (c) => { c.sfx.launch(c.rate); c.fx.launch(c.toWorld(c.V(0, 0.95, c.p.fwd + 0.95)), c.dirWorld(c.V(0, 0, 1))); c.fx.S.wave.hitList = []; c.fx.S.wave.power = 0.8 + Math.random() * 0.4; c.fx.S.wave.id = 'qi' + Math.random(); } },
+    { t: 1.17, run: (c) => { c.sfx.launch(c.rate); c.fx.launch(c.toWorld(c.V(0, 0.95, c.p.fwd + 0.95)), c.dirWorld(c.V(0, 0, 1))); c.fx.S.wave.hitList = []; c.fx.S.wave.power = c.me.power ?? 0.8 + Math.random() * 0.4; c.fx.S.wave.id = 'qi' + Math.random(); } },
   ],
   // every frame: the crescent splits what it runs through
   tick(c) {

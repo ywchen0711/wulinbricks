@@ -21,6 +21,7 @@ export const XIAOTIAN = {
     robe: { inner: '#8a1020', trim: '#d8a838', belt: '#d8a838', tassel: '#8a1020', ink: 'rgba(216,168,56,0.28)' },
     hair: { style: 'short', color: '#d8dce4' },
   },
+  poem: { zh: ['冷笑三聲天下寒，', '暴龍一怒海波翻；', '世人笑我狂且傲，', '我笑世人看不穿。'], en: ['Three cold laughs, and all the world goes cold;', 'the Tyrant Dragon’s rage turns the seas;', 'the world laughs that I am mad and proud —', 'I laugh that the world cannot see through.'] },
   moves: ['xiaojin'],
   build: (scene) => buildXiaoTian(scene),
   // at rest: hands behind his back, chin up, a slow look round, the sneer

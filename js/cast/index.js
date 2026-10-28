@@ -5,5 +5,7 @@ import { YIRUI } from './yirui.js';
 import { YISHUO } from './yishuo.js';
 import { HEIXIONG, DAOBA, SHOUHOU } from './bandits.js';
 import { XIAOTIAN } from './xiaotian.js';
-export const CAST = { yirui: YIRUI, yishuo: YISHUO, xiaotian: XIAOTIAN, heixiong: HEIXIONG, daoba: DAOBA, shouhou: SHOUHOU };
+import { CHANGFENG, TIEWUSI, SITU, BAIXIAN, GUARD1, GUARD2, ABO, DASHEN, XIAOFAN } from './longmen.js';
+export const CAST = { yirui: YIRUI, yishuo: YISHUO, xiaotian: XIAOTIAN, heixiong: HEIXIONG, daoba: DAOBA, shouhou: SHOUHOU,
+  changfeng: CHANGFENG, tiewusi: TIEWUSI, situ: SITU, baixian: BAIXIAN, guard1: GUARD1, guard2: GUARD2, abo: ABO, dashen: DASHEN, xiaofan: XIAOFAN };
 export const HEROES = ['yirui', 'yishuo', 'xiaotian']; // the ones the practice ground shows
