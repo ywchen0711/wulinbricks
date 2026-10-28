@@ -142,6 +142,15 @@ function compose(c, subj, dir, k = 0.28) {
   const fwd = c.look.clone().sub(c.pos).normalize(), right = V().crossVectors(fwd, V(0, 1, 0)).normalize(), half = c.look.distanceTo(c.pos) * Math.tan((c.fov / 2) * Math.PI / 180) * (W.camera.aspect || 1.78);
   const side = Math.sign(dir.dot(right)) || 1; c.look.addScaledVector(right, side * k * half * 0.5); return c;
 }
+// does the one in the foreground hide the face at h from a lens at q (his head nearer the line than r)?
+function covers(q, h, f, r) { const seg = h.clone().sub(q), L = seg.length(); seg.normalize(); const d = head(f).sub(q), along = d.dot(seg); if (along < 0 || along > L) return false; return d.addScaledVector(seg, -along).length() < r; }
+// is anyone (but him) standing between a lens at q and the point h, near enough to the lens to fill the frame?
+function inTheWay(q, h, who, also) {
+  const seg = h.clone().sub(q), L = seg.length(); seg.normalize();
+  for (const f of Object.values(S.A)) { if (f === who || f === also || f.hidden) continue;
+    for (const p of [head(f), f.F.root.position.clone().add(V(0, f.F.height * 0.55, 0))]) { const d = p.clone().sub(q), along = d.dot(seg); if (along < 0 || along > L - 0.35) continue; if (d.addScaledVector(seg, -along).length() < 0.32) return true; } }
+  return false;
+}
 function frameShot(s, t0) {
   const A = S.A, dt = S.t - t0;
   if (s.kind === 'at') { const look = s.follow ? head(A[s.follow]) : local(s.look); return { pos: local(s.pos).add(V(...(s.drift || [0, 0, 0])).multiplyScalar(dt)), look, fov: s.fov || 42 }; }
@@ -149,7 +158,10 @@ function frameShot(s, t0) {
   if (s.kind === 'close' && A[s.on].react?.kind === 'down' && A[s.on].react.t > 0.6) { const f = A[s.on], h = head(f), side = rot(facing(f), (s.side || 1) * 1.2); return { pos: h.clone().add(V(0, 1.25, 0)).addScaledVector(side, 0.8), look: h.clone(), fov: 30, subject: h }; }
   if (s.kind === 'close') {
     const f = A[s.on], h = head(f), fw = faceDir(f), fov = s.fov || 25, push = s.push ?? 0.015, d = ((s.dist || 1.7) * f.F.height / 1.5 + 0.4) * lens(fov) * (1 - Math.min(0.3, dt * push));
-    const pos = h.clone().addScaledVector(rot(fw, (s.side || 1) * (s.angle ?? 0.5)), d).add(V(0, s.low ? 0.5 : s.up ?? 0.06 * lens(fov), 0));
+    // of the angles round his face, the first with no one standing in the way of the lens
+    const lift = V(0, s.low ? 0.5 : s.up ?? 0.06 * lens(fov), 0), side = s.side || 1, base = s.angle ?? 0.5;
+    let pos = null; search: for (const up of [0, 0.45, 0.9]) for (const a of [base, base + 0.35, base - 0.3, -base, base + 0.7, -base - 0.4, 0]) { const q = h.clone().addScaledVector(rot(fw, side * a), d * (1 - up * 0.15)).add(lift).add(V(0, up, 0)); if (!inTheWay(q, h, f)) { pos = q; break search; } }
+    pos ||= h.clone().addScaledVector(rot(fw, side * base), d).add(lift);
     return compose({ pos, look: h.clone().add(V(0, -0.1 - (s.down || 0), 0)), fov, subject: h }, f, fw);
   }
   if (s.kind === 'over' || s.kind === 'talk') {
@@ -164,7 +176,8 @@ function frameShot(s, t0) {
     // keep to one side of the line between the two (the 180° rule)
     const base = head(A[(s.on || [s.from, s.to])[1]]).sub(head(A[(s.on || [s.from, s.to])[0]])).setY(0).normalize(), P0 = V(base.z, 0, -base.x).multiplyScalar(s.side || 1);
     let perp = V(ax.z, 0, -ax.x); if (perp.dot(P0) < 0) perp.multiplyScalar(-1);
-    const pos = a.clone().addScaledVector(ax, (s.dist || 1.0) * k).addScaledVector(perp, 0.42 * k).add(V(0, 0.08, 0));
+    let pos = null; search: for (const up of [0.08, 0.4, 0.8]) for (const sd of [0.42, 0.62, 0.85, 0.25]) { const q = a.clone().addScaledVector(ax, (s.dist || 1.0) * k).addScaledVector(perp, sd * k).add(V(0, up, 0)); if (!inTheWay(q, b, spk, lis) && !covers(q, b, lis, 0.27)) { pos = q; break search; } }
+    pos ||= a.clone().addScaledVector(ax, (s.dist || 1.0) * k).addScaledVector(perp, 0.42 * k).add(V(0, 0.08, 0));
     return compose({ pos, look: b.clone().add(V(0, -0.1, 0)), fov, subject: b, key: spk.name }, spk, faceDir(spk), 0.22);
   }
   if (s.kind === 'prop') { const it = props.items[s.on], p = it?.G.position.clone() || V(); if (it?.held) { const f = it.held.f, fw = facing(f), sd = V(fw.z, 0, -fw.x); return { pos: p.clone().addScaledVector(fw, s.above ? 0.5 : 0.75).addScaledVector(sd, 0.25).add(V(0, s.above ? 0.55 : 0.12, 0)), look: p.clone().add(V(0, 0.03, 0)), fov: s.fov || 32, subject: p }; } return { pos: p.clone().add(V(...(s.off || [0.35, 0.25, 0.45]))), look: p, fov: s.fov || 30, subject: p }; }
@@ -177,19 +190,28 @@ function frameShot(s, t0) {
 function handheld(c) { const t = S.t, d = c.pos.distanceTo(c.look); c.pos.add(V(Math.sin(t * 0.9) * 0.6 + Math.sin(t * 2.3) * 0.3, Math.sin(t * 1.3 + 1) * 0.5, Math.sin(t * 0.7 + 2) * 0.4).multiplyScalar(0.006 * d)); c.look.add(V(Math.sin(t * 1.1 + 3), Math.sin(t * 0.8 + 4) * 0.6, 0).multiplyScalar(0.003 * d)); return c; }
 // anyone standing between the lens and the face it is on is left out of this frame
 function clearFaces(c) {
+  // someone standing squarely in front of the lens, close to it, for a while, is left out of the frame until he has been
+  // clear of it for a while (so no one flickers); someone moving is never left out, he passes in front as he would;
+  // and whoever the shot is of, or speaking, never is
   const out = [], seg = c.look.clone().sub(c.pos), L = seg.length(); seg.normalize();
-  for (const f of Object.values(S.A)) {
+  const li = lineAt(S.t), keep = new Set([...(S.shotOn || []), li >= 0 ? EP.lines[li][1] : null]), dt = Math.max(0, S.t - (S.lastClear ?? S.t)); S.lastClear = S.t;
+  for (const [name, f] of Object.entries(S.A)) {
     if (f.hidden || !f.F.root.visible) continue;
-    for (const p of [head(f), f.F.root.position.clone().add(V(0, f.F.height * 0.55, 0))]) {
-      const d = p.clone().sub(c.pos), along = d.dot(seg); if (along < 0.15 || along > L - 0.25) continue;
-      if (d.addScaledVector(seg, -along).length() < 0.4) { out.push(f); f.F.root.visible = false; if (f.hero.ball) f.hero.ball.visible = false; break; }
+    let blocks = false;
+    if (!keep.has(name) && !f.walk && !f.move && !f.react) for (const p of [head(f), f.F.root.position.clone().add(V(0, f.F.height * 0.55, 0))]) {
+      const d = p.clone().sub(c.pos), along = d.dot(seg); if (along < 0.1 || along > Math.min(1.4, L - 0.4)) continue;
+      if (d.addScaledVector(seg, -along).length() < 0.26) { blocks = true; break; }
     }
+    f._blockT = blocks ? (f._blockT || 0) + dt : 0; f._clearT = blocks ? 0 : (f._clearT || 0) + dt;
+    if (f._blockT > 0.5) f._out = true; if (f._out && f._clearT > 0.5) f._out = false;
+    if (f._out && !keep.has(name) && !f.walk && !f.move && !f.react) { out.push(f); (S.hideLog ||= []).push([+S.t.toFixed(2), name]); f.F.root.visible = false; if (f.hero.ball) f.hero.ball.visible = false; }
   }
   return () => { for (const f of out) { f.F.root.visible = true; if (f.hero.ball) f.hero.ball.visible = true; } };
 }
 function camera() {
   let i = 0; while (i < EP.shots.length - 1 && EP.shots[i + 1][0] <= S.t) i++;
   const [t0, s] = EP.shots[i], c = frameShot(s, t0), key = i + ':' + (c.key || '');
+  S.shotOn = [s.on, s.from, s.to, s.follow].flat().filter(Boolean);
   if (S.shot !== key || !S.cam) { S.shot = key; S.cam = { pos: c.pos.clone(), look: c.look.clone(), fov: c.fov, subject: c.subject }; }
   else { const k = s.kind === 'move' ? 1 : s.ease ?? 0.1; S.cam.pos.lerp(c.pos, k); S.cam.look.lerp(c.look, k); S.cam.fov += (c.fov - S.cam.fov) * k; S.cam.subject = c.subject; }
   // indoors the lens stays inside the room
