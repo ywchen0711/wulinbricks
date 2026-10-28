@@ -7,7 +7,7 @@
 //   film.html?ep=ep1&t=120&lang=en; window.FILM for tests.
 import * as THREE from '../lib/three.module.min.js';
 import { createWorld, orbit, V } from './engine.js';
-import { wake, mute, SFX, audio } from './sound.js';
+import { wake, mute, SFX, audio, offline, setClock, recordTap } from './sound.js';
 import { CAST } from './cast/index.js';
 import { SETS } from './sets.js';
 import { propShelf } from './props.js';
@@ -81,6 +81,7 @@ async function buffer(i) {
   const { ac } = audio(); if (!ac) return null; const ab = await (await fetch(`audio/${v.file}`)).arrayBuffer(); S.buffers[i] = await ac.decodeAudioData(ab); return S.buffers[i];
 }
 function speak(i, offset) { // play a line's recording from where the film is in it
+  if (S.buffers[i]) { const { ac, out } = audio(); const s = ac.createBufferSource(); s.buffer = S.buffers[i]; s.connect(out); s.start(S.offline ? S.t : 0, Math.max(0, offset)); S.src = s; return; }
   buffer(i).then((b) => { if (!b || !S.playing) return; const { ac, out } = audio(); const s = ac.createBufferSource(); s.buffer = b; s.connect(out); s.start(0, Math.max(0, offset)); S.src = s; });
 }
 
@@ -225,6 +226,7 @@ const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(
 function play() { wake(); if (S.t >= EP.len - 0.05) seek(0); S.playing = true; $('pp').textContent = '❚❚'; $('start').hidden = true; SFX.ambience(scenes[S.scene]?.ambience || null); const li = lineAt(S.t); if (li >= 0) S.heard.delete(li); }
 function pause() { S.playing = false; $('pp').textContent = '▶'; S.src?.stop?.(); SFX.ambience(null); for (let i = 0; i < EP.lines.length; i++) if (EP.lines[i][0] < S.t) S.heard.add(i); }
 $('go').onclick = play;
+$('rec').onclick = () => (REC.on ? null : record());
 $('pp').onclick = () => (S.playing ? pause() : play());
 $('scrub').onchange = (e) => { const was = S.playing; seek(+e.target.value * EP.len); if (was) { const li = lineAt(S.t); if (li >= 0) S.heard.delete(li); SFX.ambience(scenes[S.scene]?.ambience || null); } };
 $('lang').onclick = () => { lang = lang === 'zh' ? 'en' : 'zh'; texts(); };
@@ -234,6 +236,7 @@ addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(
 function texts() {
   document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
   $('st').innerHTML = `<small>${EP.title[lang][0]}</small>${EP.title[lang][1]}`; $('go').textContent = lang === 'zh' ? '▶ 開演' : '▶ Play';
+  $('rec').textContent = lang === 'zh' ? '⬇ 下載影片' : '⬇ Download video'; $('rec').title = lang === 'zh' ? '從頭播放一次並錄下來，播完自動存成影片檔' : 'Plays it through once and records it; saves a video file when it ends';
   $('lang').textContent = lang === 'zh' ? 'EN' : '中'; $('cam').textContent = lang === 'zh' ? '🎬 回到導演鏡頭' : '🎬 Director’s camera'; $('back').textContent = lang === 'zh' ? '← 角色與招式' : '← Characters & moves';
   $('blurb').textContent = (EP.blurb || {})[lang] || ''; document.title = `${EP.title.zh[0]} ${EP.title.zh[1]}`;
   $('intro').dataset.k = '';
@@ -241,12 +244,68 @@ function texts() {
 let last = performance.now();
 function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (S.playing) { advance(dt); if (S.t >= EP.len) { S.t = EP.len; pause(); $('start').hidden = false; } }
-  const c = camera(); O.update(W.camera, c.look); const cc = O.on ? O.cam() : c; W.place(cc); const back = clearFaces(cc); W.render(); back(); overlays();
+  if (S.playing) { advance(dt); if (S.t >= EP.len) { S.t = EP.len; pause(); if (REC.on) REC.rec.stop(); else $('start').hidden = false; } }
+  const c = camera(); O.update(W.camera, c.look); const cc = O.on ? O.cam() : c; W.place(cc); const back = clearFaces(cc); W.render(); back(); overlays(); if (REC.on) REC.draw();
   requestAnimationFrame(loop);
 }
 W.resize(); addEventListener('resize', () => W.resize());
 texts(); seek(+(q.get('t') || 0)); requestAnimationFrame(loop);
 loadVoices().then(() => { S.voiceReady = true; if (S.voice) seek(S.t); });
-window.FILM = { W, S, EP, F, seek, play, pause, frame(t) { seek(t); const c = camera(); W.place(c); const back = clearFaces(c); W.render(); back(); overlays(); }, cast: CAST };
+// ---------------------------------------------------------------- making a video
+// one frame of the film, exactly: the world stepped by fixed sixtieths, the camera, the picture, the words
+function stepFrame(fps = 30) { const n = Math.round(60 / fps); for (let i = 0; i < n; i++) { if (S.offline) setClock(S.t); advance(1 / 60); } const c = camera(); W.place(c); return c; }
+function startFrom0() { mute(false); S.sim = false; S.src?.stop?.(); S.heard.clear(); build(); S.scene = -1; S.t = 0; enterScene(0); S.cue = 0; S.intro = S.callout = S.slowmo = S.title = null; S.cam = null; }
+// the whole soundtrack, made offline: voices at their lines, every sound effect, the ambience, all at their moments
+async function renderAudio(sr = 48000) {
+  const oac = new OfflineAudioContext(2, Math.ceil(sr * (EP.len + 1)), sr); S.offline = true; offline(oac);
+  if (S.voice) for (let i = 0; i < EP.lines.length; i++) { const v = S.voice.lines[i]; if (!v) continue; const ab = await (await fetch(`audio/${v.file}`)).arrayBuffer(); S.buffers[i] = await oac.decodeAudioData(ab); }
+  startFrom0(); S.playing = true; SFX.ambience(scenes[0].ambience || null);
+  while (S.t < EP.len) stepFrame(30);
+  S.playing = false; SFX.ambience(null);
+  const buf = await oac.startRendering(); S.offline = false;
+  // as 16-bit WAV, in base64
+  const ch = [buf.getChannelData(0), buf.getChannelData(1)], n = buf.length, data = new DataView(new ArrayBuffer(44 + n * 4));
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) data.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); data.setUint32(4, 36 + n * 4, true); w(8, 'WAVEfmt '); data.setUint32(16, 16, true); data.setUint16(20, 1, true); data.setUint16(22, 2, true); data.setUint32(24, sr, true); data.setUint32(28, sr * 4, true); data.setUint16(32, 4, true); data.setUint16(34, 16, true); w(36, 'data'); data.setUint32(40, n * 4, true);
+  for (let i = 0; i < n; i++) for (let c = 0; c < 2; c++) data.setInt16(44 + i * 4 + c * 2, Math.max(-1, Math.min(1, ch[c][i])) * 32767, true);
+  const bytes = new Uint8Array(data.buffer); let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(bin);
+}
+// for the renderer: start over silently, then one frame at a time
+function renderStart() { mute(true); startFrom0(); mute(true); S.playing = false; document.body.classList.add('rendering'); }
+function renderFrame(fps = 30) { const c = stepFrame(fps); const back = clearFaces(c); W.render(); back(); overlays(); return S.t < EP.len; }
+
+// recording in the browser: the film played through from the start in real time, the picture (and the words over it,
+// drawn onto the frame) and the sound captured, and saved as a video file when it ends
+const REC = { on: false };
+function drawWords(g, w, h) {
+  const k = h / 1080, sh = (blur) => { g.shadowColor = 'rgba(10,12,24,0.95)'; g.shadowBlur = blur * k; };
+  const text = (el, f) => { const o = +getComputedStyle(el).opacity; if (o > 0.01 && el.textContent.trim()) { g.save(); g.globalAlpha = o; f(); g.restore(); } };
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  text($('sub'), () => { const b = $('sub').querySelector('b'), who = b?.textContent || '', line = $('sub').textContent.slice(who.length); g.font = `700 ${44 * k}px "Noto Sans TC", sans-serif`; sh(10); g.fillStyle = '#fff'; const tw = g.measureText(line).width, nw = (g.font = `900 ${44 * k}px "Noto Serif TC", serif`, g.measureText(who).width + 24 * k), x0 = w / 2 - (tw + nw) / 2; g.fillStyle = b?.style.color || '#ffd'; g.fillText(who, x0 + nw / 2 - 12 * k, h - 140 * k); g.font = `700 ${44 * k}px "Noto Sans TC", sans-serif`; g.fillStyle = '#fff'; g.fillText(line, x0 + nw + tw / 2, h - 140 * k); });
+  text($('title'), () => { const sm = $('title').querySelector('small')?.textContent || '', main = $('title').textContent.slice(sm.length); sh(24); g.fillStyle = '#9ad8ff'; g.font = `900 ${34 * k}px "Noto Serif TC", serif`; g.fillText(sm, w / 2, h * 0.36); g.fillStyle = '#fff'; g.font = `900 ${84 * k}px "Noto Serif TC", serif`; g.fillText(main, w / 2, h * 0.45); });
+  text($('callout'), () => { sh(40); g.shadowColor = 'rgba(90,200,255,0.95)'; g.fillStyle = '#fff'; g.font = `900 ${130 * k}px "Noto Serif TC", serif`; g.fillText($('callout').textContent, w / 2, h * 0.4); });
+  text($('caption'), () => { sh(10); g.textAlign = 'left'; g.fillStyle = '#f4eee0'; g.font = `600 ${34 * k}px "Noto Serif TC", serif`; g.fillText($('caption').textContent, w * 0.05 + 20 * k, h * 0.1); g.fillStyle = '#f0c858'; g.fillRect(w * 0.05, h * 0.1 - 22 * k, 4 * k, 44 * k); });
+  text($('end'), () => { sh(24); g.fillStyle = '#fff'; g.font = `900 ${72 * k}px "Noto Serif TC", serif`; g.fillText($('end').textContent, w / 2, h * 0.45); });
+  const it = $('intro'); text(it, () => { // the entrance card: the name in great characters down the right, the title and the poem beside it
+    sh(20); const name = it.querySelector('.iname')?.textContent || '', title = it.querySelector('.ititle')?.textContent || '', lines = [...it.querySelectorAll('.ipoem span')];
+    const col = (str, x, y0, size, font, color, gap = 1.05) => { g.font = `${font} ${size}px "Noto Serif TC", serif`; g.fillStyle = color; [...str].forEach((ch, i) => g.fillText(ch, x, y0 + i * size * gap)); };
+    if (it.classList.contains('en')) { g.textAlign = 'right'; col(name, w * 0.94, h * 0.55, 80 * k, 900, '#fff'); return; }
+    col(name, w * 0.9, h * 0.2, 130 * k, 900, '#fff'); col(title, w * 0.9 - 105 * k, h * 0.2, 30 * k, 600, '#f0c858', 1.5);
+    lines.forEach((s, i) => { g.save(); g.globalAlpha *= +s.style.opacity || 0; col(s.textContent, w * 0.9 - 160 * k - i * 46 * k, h * 0.26, 32 * k, 600, '#f4eee0', 1.2); g.restore(); });
+  });
+  const fd = +$('fade').style.opacity || 0; if (fd > 0) { g.fillStyle = `rgba(0,0,0,${fd})`; g.fillRect(0, 0, w, h); }
+}
+async function record() {
+  if (REC.on || !window.MediaRecorder) return;
+  const btn = $('rec'), out = document.createElement('canvas'); out.width = 1920; out.height = 1080; const g = out.getContext('2d');
+  REC.on = true; btn.textContent = lang === 'zh' ? '● 錄製中…（播完會自動下載）' : '● Recording… (saves when it ends)'; btn.classList.add('on');
+  const stream = out.captureStream(30); for (const tr of recordTap().getAudioTracks()) stream.addTrack(tr);
+  const type = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/webm;codecs=vp9,opus', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t)), rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 12e6 }), chunks = [];
+  rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+  rec.onstop = () => { const blob = new Blob(chunks, { type }), a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${EP.title.zh[0]}_${EP.id}.${type.includes('mp4') ? 'mp4' : 'webm'}`; a.click(); REC.on = false; btn.classList.remove('on'); texts(); document.body.classList.remove('rendering'); };
+  REC.draw = () => { g.drawImage(cv, 0, 0, out.width, out.height); drawWords(g, out.width, out.height); };
+  O.on = false; $('cam').hidden = true; seek(0); document.body.classList.add('rendering'); rec.start(1000); REC.rec = rec; play();
+}
+window.FILM = {
+  renderStart, renderFrame, renderAudio, record, W, S, EP, F, seek, play, pause, frame(t) { seek(t); const c = camera(); W.place(c); const back = clearFaces(c); W.render(); back(); overlays(); }, cast: CAST };
 window.DONE = true;

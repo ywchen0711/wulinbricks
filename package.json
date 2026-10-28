@@ -1,1 +1,1 @@
-{ "name": "wulinbricks", "private": true, "type": "module" }
+{ "name": "wulinbricks", "private": true, "type": "module", "devDependencies": { "puppeteer-core": "^22.15.0" } }

@@ -111,6 +111,24 @@ A film can hold someone down until a cue releases him.
 In the duel, **⚔ 同時出招 Both at once** has the brothers strike together, and auto sparring does this every third
 round.
 
+## Making a video (for YouTube)
+
+**From the page.** Press **⬇ 下載影片 Download video** on the episode's control bar. The episode plays through once
+from the start while the picture, the words over it and the sound are recorded. When it ends, a video file is saved:
+MP4 in Chrome and Edge, WebM elsewhere. YouTube takes either. It records in real time, so a slow machine gives a
+choppier video.
+
+**Best quality.** Render it frame by frame:
+
+```
+npm install
+node tools/render.mjs ep1               # renders/ep1.mp4: 1920x1080, 30 fps, H.264 + AAC, loudness at -14 LUFS
+node tools/render.mjs ep1 --lang en     # with English subtitles
+```
+
+Every frame is stepped exactly, so nothing is dropped. The soundtrack is made offline: voices, sound effects and
+ambience. It needs Chrome and ffmpeg, and takes about 50 minutes for a 7½-minute episode.
+
 ## How it is made
 
 | File | What it holds |

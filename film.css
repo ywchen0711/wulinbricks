@@ -27,3 +27,6 @@
 #intro.en .ipoem { padding: 6px 0 0; gap: 2px; letter-spacing: .02em; font-size: clamp(14px, 1.6vw, 19px); }
 #callout { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); font-family: "Noto Serif TC", serif; font-weight: 900; font-size: clamp(44px, 8vw, 110px); letter-spacing: .2em; color: #fff; text-shadow: 0 0 24px rgba(90,200,255,.95), 0 0 60px rgba(90,200,255,.6), 0 5px 0 #141c34; opacity: 0; pointer-events: none; white-space: nowrap; z-index: 3; }
 #caption { position: fixed; left: 5%; top: 9%; font-family: "Noto Serif TC", serif; font-weight: 600; font-size: clamp(16px, 2vw, 24px); letter-spacing: .3em; color: #f4eee0; text-shadow: 0 0 10px rgba(0,0,0,.9); opacity: 0; pointer-events: none; border-left: 3px solid #f0c858; padding-left: 12px; z-index: 3; }
+
+#rec.on { background: #c8281e; }
+body.rendering #ctl { opacity: 0; } body.rendering #ctl:hover { opacity: 1; } body.rendering #cam { display: none; }
