@@ -79,6 +79,19 @@ export function createWorld(canvas, { targets: withTargets = true, dof = false }
   function flash(f) { if (!f._mats) { f._mats = []; f.F.root.traverse((o) => { if (o.material && !Array.isArray(o.material) && o.material.emissive && o.material.emissive.getHex() === 0 && !f._mats.includes(o.material)) f._mats.push(o.material); }); } f._flash = 0.16; }
   const ctx = (f, mdt) => ({ fx, sfx: SFX, targets: W.useTargets ? targets : null, hero: f.hero, scene, p: f.p, t: f.t, dt: mdt, clock: W.clock, rate: W.slow, V, me: f, foes: W.fighters.filter((g) => g !== f && g.team !== f.team && !g.hidden && !(g.react?.kind === 'down')), toWorld: f.toWorld, toLocal: f.toLocal, dirWorld: f.dirWorld, world: W, projectile: (o) => W.proj.push(o),
     peek(t) { const p = f.move ? poseAt(f.move, t) : f.CH.idle(W.clock).pose; apply(f, { ...DEF, ...p }, 0); f.F.root.updateMatrixWorld(true); } });
+  // a weapon carried, not brandished, when he is not fighting: a blade hangs down along the leg, a spear stands upright,
+  // a club rests on the shoulder; and if it still ends up inside someone near, it is tucked back behind him
+  const CARRY = { down: Math.PI - 1.05 - 0.25, up: -1.05 + 0.15, shoulder: -1.05 - 0.55 };
+  function carry(f, dt, fighting) {
+    const gs = f.hero.grips; if (!gs?.length) return;
+    f._carry = f._carry ?? 1; f._carry += ((fighting ? 0 : 1) - f._carry) * Math.min(1, dt * (fighting ? 14 : 4));
+    f._tuck = Math.max(0, (f._tuck || 0) - dt * 0.6);
+    const tip = f.hero.tip;
+    if (tip && !fighting) { f.F.root.updateMatrixWorld(true); const tp = tip.getWorldPosition(V()), mid = tp.clone().lerp(f.F.hands[0].getWorldPosition(V()), 0.5);
+      for (const g of W.fighters) { if (g === f || g.hidden) continue; const gp = g.F.root.position, r = g.CH.spec.age === 'kid' ? 0.26 : 0.32, h = g.F.height;
+        for (const q of [tp, mid]) if (Math.hypot(q.x - gp.x, q.z - gp.z) < r && q.y > gp.y - 0.05 && q.y < gp.y + h) { f._tuck = Math.min(1, f._tuck + dt * 6); break; } } }
+    for (const g of gs) { const c = CARRY[g.userData.carry] ?? g.userData.fight, k = f._carry; g.rotation.x = g.userData.fight + (c - g.userData.fight) * k - f._tuck * 0.9 * k * (g.userData.carry === 'down' ? -1 : 1); }
+  }
   function apply(f, p, speed) {
     const w = f.toWorld(V(0, 0, p.fwd)).add(f.push);
     f.F.pose({ x: w.x, y: p.y + (f.mark.y || 0), z: w.z, yaw: f.mark.yaw + p.yaw, tilt: p.tilt, roll: p.roll, hipR: p.hipR, hipL: p.hipL, armR: p.armR, armL: p.armL, outR: p.outR, outL: p.outL, wristR: p.wristR, wristL: p.wristL, head: p.head });
@@ -120,6 +133,7 @@ export function createWorld(canvas, { targets: withTargets = true, dof = false }
         f.F.face(face);
       }
       settle(f, p, mdt, !!M || !!f.react);
+      carry(f, mdt, !!M || (f.react && f.react.t < 0.6));
       // a blow taken, over everything
       if (f.react) {
         const r = f.react; let tt = r.t; if (r.hold && r.kind === 'down') tt = Math.min(tt, 1.6);

@@ -61,7 +61,7 @@ export function buildYiRui(scene) {
   const sc = new THREE.Group(); sc.position.set(8.4, 14.5, -1.5); sc.rotation.set(0.75, 0, 0.12); B.add(sc);
   mesh(rbox(3.2, 21, 1.5, 0.6), dark, sc).position.y = -10.5; for (const y of [-1, -10, -20.5]) mesh(rbox(3.7, 1.1, 1.8, 0.4), silver, sc).position.y = y;
   // the saber, through the grip of the right hand
-  const hand = F.hands[0], grip = new THREE.Group(); grip.rotation.x = Math.PI / 2 - 1.05; hand.add(grip); // the blade straight ahead with the arm hanging; raising the arm raises it
+  const hand = F.hands[0], grip = new THREE.Group(); grip.rotation.x = Math.PI / 2 - 1.05; grip.userData.fight = grip.rotation.x; grip.userData.carry = 'down'; hand.add(grip); // the blade straight ahead with the arm hanging; raising the arm raises it
   mesh(new THREE.CylinderGeometry(0.75, 0.8, 7, 12), plastic('#2a1a16'), grip);
   for (let i = 0; i < 4; i++) { const w = mesh(new THREE.TorusGeometry(0.82, 0.18, 6, 14), plastic('#a8302a'), grip); w.rotation.x = Math.PI / 2; w.position.y = -2.4 + i * 1.6; }
   const pom = mesh(new THREE.TorusGeometry(1.4, 0.42, 10, 20), silver, grip); pom.position.y = -4.9;
@@ -74,7 +74,7 @@ export function buildYiRui(scene) {
   void bmesh;
   scene?.add(F.root);
   return {
-    F, tip, base, ties, tail, remove() { F.root.parent?.remove(F.root); },
+    F, tip, base, ties, tail, grips: [grip], remove() { F.root.parent?.remove(F.root); },
     setGlow(k) { bm.emissiveIntensity = k * 2.2; halo.material.opacity = Math.min(0.6, k * 0.4); },
     // the loose things: ties and tail swing with time, and fly back when he moves fast
     sway(t, speed = 0) { ties.forEach((p, i) => { p.rotation.x = -0.35 - speed * 0.9 + Math.sin(t * 5.2 + i * 1.7) * 0.12; p.rotation.z = (i ? 1 : -1) * (0.12 + Math.sin(t * 3.1 + i) * 0.05); }); tail.rotation.x = -0.25 - speed * 0.6 + Math.sin(t * 3.4) * 0.06; },

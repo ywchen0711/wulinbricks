@@ -12,14 +12,14 @@ const idleSwagger = (lean) => (c) => ({
 function bandit(spec, gear) {
   return (scene) => {
     const F = makeFig(spec), mesh = (g, m, p) => { const o = new THREE.Mesh(g, m); o.castShadow = true; o.receiveShadow = true; p.add(o); return o; };
-    const grip = new THREE.Group(); grip.rotation.x = Math.PI / 2 - 1.05; F.hands[0].add(grip);
+    const grip = new THREE.Group(); grip.rotation.x = Math.PI / 2 - 1.05; grip.userData.fight = grip.rotation.x; grip.userData.carry = gear.club ? 'shoulder' : 'down'; F.hands[0].add(grip);
     let tip = null;
     if (gear.club) { mesh(new THREE.CylinderGeometry(1.0, 1.8, 30, 12), plastic('#6a4428', { roughness: 0.6 }), grip).position.y = 12; for (const y of [8, 16, 22]) { const n = mesh(new THREE.SphereGeometry(1.4, 8, 6), plastic('#4a2e1a'), grip); n.position.set(1.2, y, 0); } tip = new THREE.Object3D(); tip.position.y = 26; grip.add(tip); }
     if (gear.sword) { mesh(new THREE.CylinderGeometry(0.75, 0.75, 6, 10), plastic('#2a1a14'), grip); const gd = mesh(rbox(5, 1, 1.6, 0.4), plastic('#6a6a64', { metalness: 0.6 }), grip); gd.position.y = 3.4; const b = mesh(rbox(3.2, 20, 0.6, 0.3), new THREE.MeshPhysicalMaterial({ color: '#a8aeb4', metalness: 0.8, roughness: 0.4 }), grip); b.position.y = 14; tip = new THREE.Object3D(); tip.position.y = 24; grip.add(tip); }
     if (gear.headwrap) { const w = mesh(new THREE.SphereGeometry(6.1, 30, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), plastic(gear.headwrap), F.headP); w.position.y = 6.6; w.scale.set(1, 0.85, 1); const k = mesh(new THREE.SphereGeometry(1.8, 10, 8), plastic(gear.headwrap), F.headP); k.position.set(-4, 9, -3.5); }
     if (gear.vest) { const v = mesh(rbox(16.4, 12.4, 1.0, 0.4), plastic(gear.vest), F.body); v.position.set(0, 21.6, -4.2); }
     scene?.add(F.root);
-    return { F, tip, remove() { F.root.parent?.remove(F.root); }, sway() {}, setGlow() {} };
+    return { F, tip, grips: tip ? [grip] : [], remove() { F.root.parent?.remove(F.root); }, sway() {}, setGlow() {} };
   };
 }
 const gang = (id, zh, en, title, bio, spec, gear, lean, moves) => ({ id, name: { zh, en }, title, bio, spec, moves, gang: 'heifeng', build: bandit(spec, gear), idle: idleSwagger(lean) });

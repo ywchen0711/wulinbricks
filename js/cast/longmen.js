@@ -15,8 +15,8 @@ import { makeFig, plastic, rbox } from '../brick/minifig.js';
 const mk = (F) => (g, m, p) => { const o = new THREE.Mesh(g, m); o.castShadow = true; o.receiveShadow = true; p.add(o); return o; };
 const behind = (lean = -0.04) => (c) => ({ pose: { armR: 0.5, outR: -0.05, armL: 0.5, outL: -0.05, hipR: -0.08, hipL: 0.08, tilt: lean, yaw: 0.1, head: Math.sin(c * 0.4) * 0.2, y: Math.sin(c * 1.4) * 0.004 }, face: { mouth: { smile: 0.25 }, browIn: 0.3, blink: (c % 4.6) < 0.1 ? 1 : 0 } });
 const plain = (face = {}) => (c) => ({ pose: { armR: -0.15 + Math.sin(c * 1.3) * 0.03, outR: 0.12, armL: -0.15, outL: 0.12, hipR: -0.06, hipL: 0.06, head: Math.sin(c * 0.5) * 0.25, y: Math.sin(c * 1.7) * 0.004 }, face: { mouth: { smile: 0.4 }, ...face, blink: (c % 3.9) < 0.1 ? 1 : 0 } });
-function base(spec, dress) { return (scene) => { const F = makeFig(spec), mesh = mk(F), extra = dress?.(F, mesh) || {}; scene?.add(F.root); return { F, remove() { F.root.parent?.remove(F.root); }, sway() {}, setGlow() {}, ...extra }; }; }
-const gripOf = (F, side = 0) => { const g = new THREE.Group(); g.rotation.x = Math.PI / 2 - 1.05; F.hands[side].add(g); return g; };
+function base(spec, dress) { return (scene) => { const F = makeFig(spec), mesh = mk(F), extra = dress?.(F, mesh) || {}; scene?.add(F.root); return { F, grips: F.grips || [], tip: F.tipObj || null, remove() { F.root.parent?.remove(F.root); }, sway() {}, setGlow() {}, ...extra }; }; }
+const gripOf = (F, side = 0, carry = null) => { const g = new THREE.Group(); g.rotation.x = Math.PI / 2 - 1.05; g.userData.fight = g.rotation.x; if (carry) { g.userData.carry = carry; (F.grips ||= []).push(g); } F.hands[side].add(g); return g; };
 const topknot = (H, mesh, hairM, crownC) => { mesh(new THREE.CylinderGeometry(1.9, 2.3, 2.8, 16), hairM, H).position.set(0, 12.0, -1.0); if (crownC) { const c = mesh(new THREE.CylinderGeometry(2.6, 2.9, 1.8, 18, 1, true), plastic(crownC, { metalness: 0.5, roughness: 0.3 }), H); c.position.set(0, 12.2, -1.0); c.material.side = THREE.DoubleSide; } };
 
 export const CHANGFENG = {
@@ -44,7 +44,7 @@ TIEWUSI.build = base(TIEWUSI.spec, (F, mesh) => {
   const cap = mesh(new THREE.CylinderGeometry(5.4, 5.9, 5.0, 28), hat, H); cap.position.y = 9.2;
   mesh(rbox(6, 4, 3, 1), hat, H).position.set(0, 10.4, -3.6);
   for (const s of [-1, 1]) { const w = mesh(rbox(7.5, 1.4, 0.5, 0.3), hat, H); w.position.set(s * 8.6, 10.6, -3.6); }
-  const g = gripOf(F); mesh(rbox(1.6, 18, 1.6, 0.4), plastic('#5a5e66', { metalness: 0.7, roughness: 0.35 }), g).position.y = 6; // the iron ruler
+  const g = gripOf(F, 0, 'down'); mesh(rbox(1.6, 18, 1.6, 0.4), plastic('#5a5e66', { metalness: 0.7, roughness: 0.35 }), g).position.y = 6; // the iron ruler
 });
 
 export const SITU = {
@@ -78,7 +78,7 @@ BAIXIAN.build = base(BAIXIAN.spec, (F, mesh) => {
 const GUARD_SPEC = { age: 'adult', swordBrows: true, colors: { top: '#22242a', bottom: '#1a1a20', shoes: '#0e0e12' }, outfit: { top: 'robe', bottom: 'pants' }, robe: { inner: '#3a3a44', trim: '#a02a2a', belt: '#a02a2a', ink: 'rgba(0,0,0,0.15)' }, hair: { style: 'short', color: '#1a1414' } };
 const guard = (id, zh) => {
   const G = { id, name: { zh, en: 'Law Hall guard' }, title: { zh: '執法堂弟子', en: 'Law Hall' }, bio: { zh: '', en: '' }, spec: { ...GUARD_SPEC, stubble: id === 'guard2' }, moves: ['punch'], idle: (c) => ({ pose: { armR: -0.45, outR: 0.12, armL: -0.2, outL: 0.1, hipR: -0.05, hipL: 0.05, head: Math.sin(c * 0.6 + id.length) * 0.2 }, face: { browIn: 0.8, mouth: { smile: -0.1 } } }) };
-  G.build = base(G.spec, (F, mesh) => { const c = mesh(new THREE.SphereGeometry(6.1, 26, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), plastic('#1a1a20'), F.headP); c.position.y = 6.6; mesh(new THREE.CylinderGeometry(6.4, 6.4, 0.8, 26), plastic('#a02a2a'), F.headP).position.y = 6.9; const g = gripOf(F); mesh(new THREE.CylinderGeometry(0.6, 0.6, 52, 8), plastic('#5a3a24'), g).position.y = 14; const tip = mesh(new THREE.ConeGeometry(1.2, 6, 8), plastic('#c8ccd4', { metalness: 0.8 }), g); tip.position.y = 43; });
+  G.build = base(G.spec, (F, mesh) => { const c = mesh(new THREE.SphereGeometry(6.1, 26, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), plastic('#1a1a20'), F.headP); c.position.y = 6.6; mesh(new THREE.CylinderGeometry(6.4, 6.4, 0.8, 26), plastic('#a02a2a'), F.headP).position.y = 6.9; const g = gripOf(F, 0, 'up'); const tipO = new THREE.Object3D(); tipO.position.y = 44; g.add(tipO); F.tipObj = tipO; mesh(new THREE.CylinderGeometry(0.6, 0.6, 52, 8), plastic('#5a3a24'), g).position.y = 14; const tip = mesh(new THREE.ConeGeometry(1.2, 6, 8), plastic('#c8ccd4', { metalness: 0.8 }), g); tip.position.y = 43; });
   return G;
 };
 export const GUARD1 = guard('guard1', '執法堂弟子甲'), GUARD2 = guard('guard2', '執法堂弟子乙');
