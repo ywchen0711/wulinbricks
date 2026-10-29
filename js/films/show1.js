@@ -74,7 +74,7 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], caption: { zh: '《龍門雙
   setup: (A, F) => { set(F).names(NAMES); set(F).lights('dim'); set(F).screen('off'); still(A); },
 }, (sc) => {
   sc.S({ kind: 'at', pos: [0, 4.6, 9.4], look: [0, 2.2, -4.5], fov: 50, drift: [0, -0.1, -0.22] })
-    .C((A, F) => F.sfx('drumroll', 2.6)).W(2.6)
+    .C((A, F) => F.sfx('sample', 'drumroll26', 0.9)).W(2.6)
     .C((A, F) => { set(F).lights('party'); set(F).screen('logo', {}); F.sfx('jingle'); F.sfx('sample', pick(F, 'cheer'), 0.8); set(F).crowd('cheer', 4); }).W(0.6)
     .C((A, F) => F.title(6)).W(5.6)
     .C((A, F) => { set(F).lights('show'); F.walk('host', HX, HZ, { speed: 1.5 }); A.host.gest('wave'); F.sfx('sample', 'applause_long', 0.7); set(F).crowd('clap', 5); })
@@ -300,7 +300,7 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], place: placeAll(), setup: (A
     .C(right('yuan', 300)).C(screen('q', { round: R, pts: PTS, word: '一＿雙鵰', mark: 1, fix: '箭' }), 0.2).W(1.2)
     .L('host', '答對了！現場的觀眾有聽到嗎？我是用讀唇的！', 'Correct! Could the audience hear that? I had to read her lips!', 'excited', { shot: close('host', { dist: 1.7 }) })
     .C(laugh(1.6)).W(1.3)
-    .L('host', '第三關結束！我們來看看分數——', 'End of round three! Let’s look at the scores —', 'excited', { shot: SCREEN, cue: (A, F) => { F.sfx('drumroll', 2.2); set(F).screen('scores', { title: '第三關結束', rows: [['奕叡', 400, '#2a3a8a'], ['奕碩', 400, '#d8462a'], ['林書涵', 300, '#3a7ad8'], ['張圓圓', 300, '#e86aa0'], ['王大寶', 200, '#f08a2a'], ['陳小雷', 100, '#e8b81a']] }); }, at: 1.2 })
+    .L('host', '第三關結束！我們來看看分數——', 'End of round three! Let’s look at the scores —', 'excited', { shot: SCREEN, cue: (A, F) => { F.sfx('sample', 'drumroll22', 0.9); set(F).screen('scores', { title: '第三關結束', rows: [['奕叡', 400, '#2a3a8a'], ['奕碩', 400, '#d8462a'], ['林書涵', 300, '#3a7ad8'], ['張圓圓', 300, '#e86aa0'], ['王大寶', 200, '#f08a2a'], ['陳小雷', 100, '#e8b81a']] }); }, at: 1.2 })
     .W(1.6)
     .L('host', '最高分是……奕叡跟奕碩，一樣四百分！兄弟倆一起進入決戰！', 'At the top… Yi Rui and Yi Shuo, four hundred each! The brothers go through to the final together!', 'excited', { shot: BROS, cue: (A, F) => { F.sfx('jingle'); set(F).lights('party'); }, at: 2.4 })
     .C((A, F) => { F.sfx('sample', pick(F, 'cheer'), 0.9); set(F).crowd('cheer', 4); A.shuo.gest('jump'); }).W(1.6)
@@ -324,7 +324,7 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], place: placeAll(), setup: (A
   const board = (who, text) => (A, F) => { const n = who + ':' + text; F.put(n, 'board:' + text, F.P(0, -9)); F.give(n, who, 'R', [0.06, 0.04, who === 'rui' ? 0.24 : 0.14]); A[who].gest('show', { hold: true }); F.sfx('swoosh'); };
   const boards = (a, b) => (A, F) => { board('rui', a)(A, F); board('shuo', b)(A, F); };
   const down = (A, F) => { for (const n of ['rui:ㄉㄚˊ', 'shuo:ㄉㄚˊ', 'rui:龜', 'shuo:龜', 'rui:弟', 'shuo:哥']) if (F.prop(n)) F.hide(n); A.rui.gesture = null; A.shuo.gesture = null; };
-  sc.S({ kind: 'at', pos: [0, 1.6, 5.0], look: [0, 1.4, -4], fov: 40, drift: [0, 0, -0.18] }).C((A, F) => { F.sfx('drumroll', 2.6); set(F).screen('final', { a: '奕叡', b: '奕碩' }); }).W(3.0)
+  sc.S({ kind: 'at', pos: [0, 1.6, 5.0], look: [0, 1.4, -4], fov: 40, drift: [0, 0, -0.18] }).C((A, F) => { F.sfx('sample', 'drumroll26', 0.9); set(F).screen('final', { a: '奕叡', b: '奕碩' }); }).W(3.0)
     .L('host', '最後決戰，一字千金！每題一千分，兩位同時寫在板子上！', 'The final: A Word Worth Gold! A thousand a question — you both write on your boards at once!', 'excited', { shot: HOSTW })
     .L('host', '第一題：三個「龍」字疊在一起，念什麼？', 'Question one: three “dragon” characters stacked together — how is it read?', 'calm', { shot: SCREEN, cue: screen('ask', { round: R, pts: PTS, big: '龘', foot: '三個龍疊在一起，念什麼？' }), at: 0.3 })
     .C(write).C((A, F) => F.sfx('ticktock', 4)).S(BROS).W(4.4)
@@ -360,7 +360,7 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], place: placeAll(), setup: (A
     .L('host', '哥哥寫「弟」，弟弟寫「哥」……', 'The big brother writes “little brother”, the little brother writes “big brother”…', 'sad', { shot: { kind: 'close', on: 'host', side: -1, dist: 1.7, push: 0.05 } })
     .L('host', '我主持這麼多年，第一次在節目上，被小朋友弄哭……', 'All these years hosting, and this is the first time a kid has made me cry on air…', 'sad', { cue: (A) => A.host.gest('cry', { hold: true }), at: 0.6 })
     .C(laugh(0.6)).C((A, F) => { F.sfx('sample', pick(F, 'aww'), 0.7); }, 0.4).W(1.6).C((A) => { A.host.gesture = null; })
-    .L('host', '這題我判不下去。我宣布——今天的冠軍：奕叡、奕碩，平手！', 'I can’t judge this one. I declare — tonight’s champions: Yi Rui and Yi Shuo, a draw!', 'excited', { shot: MASTER, cue: (A, F) => { F.sfx('drumroll', 1.6); }, at: 1.2 })
+    .L('host', '這題我判不下去。我宣布——今天的冠軍：奕叡、奕碩，平手！', 'I can’t judge this one. I declare — tonight’s champions: Yi Rui and Yi Shuo, a draw!', 'excited', { shot: MASTER, cue: (A, F) => { F.sfx('sample', 'drumroll16', 0.9); }, at: 1.2 })
     .C((A, F) => { F.callout({ zh: '平手！', en: 'A draw!' }, { dur: 2.2 }); set(F).screen('tie', { sub: '雙冠軍　奕叡・奕碩' }); set(F).lights('party'); set(F).confetti(); F.sfx('jingle'); F.sfx('coins'); F.sfx('sample', pick(F, 'cheer'), 1); set(F).crowd('cheer', 6); down(A, F); A.shuo.gest('jump'); for (const n of ['lei', 'han', 'bao', 'yuan']) A[n].gest('clap'); })
     .S({ kind: 'at', pos: [0, 2.2, 4.6], look: [0, 1.6, -2.4], fov: 52, drift: [0, 0.06, -0.15] }).W(2.6)
     .C((A, F) => { F.walk('shuo', pod('shuo').x - 0.45, pod('shuo').z - 0.95, { speed: 1.2 }); F.walk('rui', pod('rui').x + 0.45, pod('rui').z - 0.95, { speed: 1.2 }); }).W(1.2)
@@ -410,7 +410,7 @@ for (const s of SCENES) {
 cues.sort((a, b) => a[0] - b[0]); shots.sort((a, b) => a[0] - b[0]);
 export const SHOW1 = {
   id: 'show1', len: T0, voiced: true, audioV: 1, pace: 12, scenes, lines, cues, shots, say,
-  samplesV: 3, samples: ['applause_long', ...Object.entries(TAKES).flatMap(([b, n]) => Array.from({ length: n }, (_, i) => b + (i + 1)))],
+  samplesV: 4, samples: ['applause_long', 'drumroll26', 'drumroll22', 'drumroll16', ...Object.entries(TAKES).flatMap(([b, n]) => Array.from({ length: n }, (_, i) => b + (i + 1)))],
   title: { zh: ['龍門雙奕　番外篇', '一字千金'], en: ['The Longmen Brothers — a special', 'A Word Worth Gold'] },
   end: { zh: '《一字千金》兒童特別節目　完', en: 'The End' },
   blurb: { zh: '奕叡和奕碩去參加曾國城主持的國字比賽《一字千金》！六個小朋友：先按再想的小雷、把辭典當故事書的書涵、滿腦子食物的大寶、小聲到要蹲下來聽的圓圓……最後的決戰，兄弟倆寫下的字讓主持人判不下去。播放中可以拖曳畫面轉視角。', en: 'Yi Rui and Yi Shuo go on “A Word Worth Gold”, a children’s quiz show of Chinese characters. Six kids: one who buzzes before he thinks, one who reads the dictionary for fun, one whose head is full of food, one who whispers… and in the final, the brothers write words the host just can’t judge. Drag the picture to look around while it plays.' },
