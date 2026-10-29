@@ -78,7 +78,7 @@ const sceneAt = (t) => { let i = 0; while (i < scenes.length - 1 && scenes[i + 1
 const durOf = (i) => S.voice?.lines?.[i]?.dur ?? Math.max(1.2, EP.lines[i][2].length * 0.24);
 const lineAt = (t) => { for (let i = EP.lines.length - 1; i >= 0; i--) { const L = EP.lines[i]; if (t >= L[0] && t < L[0] + durOf(i) + 0.35) return i; if (L[0] < t - 30) break; } return -1; };
 async function loadVoices() {
-  if (EP.samples) await loadSamples(EP.samples);
+  if (EP.samples) await loadSamples(EP.samples, EP.samplesV || 1);
   if (!EP.voiced) { S.voice = null; return; }
   try { S.voice = await (await fetch(`audio/${EP.id}.json?v=${EP.audioV || 1}`)).json(); } catch (e) { S.voice = null; }
 }

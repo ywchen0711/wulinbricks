@@ -55,7 +55,7 @@ const right = (n, score) => (A, F) => { F.sfx('ding'); set(F).score(POD[n], scor
 const wrong = (n) => (A, F) => { F.sfx('wrong'); set(F).flash(POD[n], 'bad'); };
 // the audience's sounds are real recordings in a few takes each (tools/crowd_real.py); which take, by the moment, so
 // that no two laughs in a row are the same one and a seek hears what playing would
-const TAKES = { laugh_s: 4, laugh_m: 6, laugh_b: 4, aww: 2, ooh: 4, cheer: 2, applause: 3 };
+const TAKES = { laugh_s: 4, laugh_m: 6, laugh_b: 4, aww: 2, ooh: 4, cheer: 2, applause: 4 };
 const pick = (F, base) => base + (1 + Math.floor(F.now() * 7.31) % TAKES[base]);
 const laugh = (k = 1, who = []) => (A, F) => { F.sfx('sample', pick(F, k > 1.5 ? 'laugh_b' : k < 0.8 ? 'laugh_s' : 'laugh_m'), 0.75 + 0.15 * k); set(F).crowd('laugh', 1.8 + k); for (const n of who) A[n]?.gest(n === 'host' ? 'laughbig' : 'laugh'); };
 const clap = (len = 3) => (A, F) => { F.sfx('sample', len > 4 ? 'applause_long' : pick(F, 'applause'), 0.7); set(F).crowd('clap', len); };
@@ -410,7 +410,7 @@ for (const s of SCENES) {
 cues.sort((a, b) => a[0] - b[0]); shots.sort((a, b) => a[0] - b[0]);
 export const SHOW1 = {
   id: 'show1', len: T0, voiced: true, audioV: 1, pace: 12, scenes, lines, cues, shots, say,
-  samples: ['applause_long', ...Object.entries(TAKES).flatMap(([b, n]) => Array.from({ length: n }, (_, i) => b + (i + 1)))],
+  samplesV: 3, samples: ['applause_long', ...Object.entries(TAKES).flatMap(([b, n]) => Array.from({ length: n }, (_, i) => b + (i + 1)))],
   title: { zh: ['龍門雙奕　番外篇', '一字千金'], en: ['The Longmen Brothers — a special', 'A Word Worth Gold'] },
   end: { zh: '《一字千金》兒童特別節目　完', en: 'The End' },
   blurb: { zh: '奕叡和奕碩去參加曾國城主持的國字比賽《一字千金》！六個小朋友：先按再想的小雷、把辭典當故事書的書涵、滿腦子食物的大寶、小聲到要蹲下來聽的圓圓……最後的決戰，兄弟倆寫下的字讓主持人判不下去。播放中可以拖曳畫面轉視角。', en: 'Yi Rui and Yi Shuo go on “A Word Worth Gold”, a children’s quiz show of Chinese characters. Six kids: one who buzzes before he thinks, one who reads the dictionary for fun, one whose head is full of food, one who whispers… and in the final, the brothers write words the host just can’t judge. Drag the picture to look around while it plays.' },

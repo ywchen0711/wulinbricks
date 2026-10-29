@@ -43,9 +43,9 @@ function tone(f0, f1, dur, { at = 0, vol = 0.3, type = 'sine', a = 0.01 } = {}) 
 }
 // recorded sounds (audio/sfx/<name>.mp3: the studio audience), decoded once and played at their moment
 const samples = {};
-export async function loadSamples(names) {
+export async function loadSamples(names, v = 1) {
   const dec = new OfflineAudioContext(2, 1, 44100);
-  await Promise.all(names.map(async (n) => { if (samples[n]) return; try { samples[n] = await dec.decodeAudioData(await (await fetch(`audio/sfx/${n}.mp3`)).arrayBuffer()); } catch (e) { /* the film plays on without it */ } }));
+  await Promise.all(names.map(async (n) => { if (samples[n]) return; try { samples[n] = await dec.decodeAudioData(await (await fetch(`audio/sfx/${n}.mp3?v=${v}`)).arrayBuffer()); } catch (e) { /* the film plays on without it */ } }));
 }
 export const SFX = {
   sample(name, vol = 1, rate = 1) { if (!ac || muted || !samples[name]) return; const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = samples[name]; s.playbackRate.value = rate; g.gain.value = vol; s.connect(g).connect(out); s.start(now()); },
