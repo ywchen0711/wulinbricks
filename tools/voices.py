@@ -20,13 +20,17 @@ VOICES = {  # cast id: (voice, pitch Hz, rate %)
     'heixiong': ('zh-CN-YunjianNeural', -22, 2), 'daoba': ('zh-CN-YunyangNeural', -12, 6), 'shouhou': ('zh-CN-YunxiNeural', 18, 16),
     'abo': ('zh-CN-YunyangNeural', -18, -14), 'dashen': ('zh-CN-liaoning-XiaobeiNeural', 0, 6), 'xiaofan': ('zh-CN-YunxiNeural', 6, 4),
     'xiaotian': ('zh-CN-YunjianNeural', -14, -6),
+    # the quiz show: the host, and the four other children (圓圓 is recorded soft)
+    'host': ('zh-TW-YunJheNeural', 4, 20), 'xiaolei': ('zh-CN-YunxiaNeural', 14, 30), 'shuhan': ('zh-TW-HsiaoYuNeural', 8, 14),
+    'dabao': ('zh-CN-YunxiaNeural', -12, 6), 'yuanyuan': ('zh-CN-XiaoyiNeural', 14, -4, -45),
 }
 FEEL = {'happy': (5, 4), 'excited': (12, 12), 'laugh': (6, 6), 'surprised': (16, 10), 'scared': (12, 12), 'sad': (-10, -10), 'worried': (-4, -4),
         'thinking': (-6, -8), 'shy': (2, -8), 'angry': (6, 12), 'shout': (10, 14), 'calm': (0, -4), 'proud': (3, 2)}
 
-async def say(text, voice, pitch, rate, path):
+async def say(text, voice, pitch, rate, path, volume=0):
     if os.path.exists(path) and os.path.getsize(path) > 0: return
-    await edge_tts.Communicate(text, voice, rate=f'{rate:+d}%', pitch=f'{pitch:+d}Hz').save(path)
+    await asyncio.wait_for(edge_tts.Communicate(text, voice, rate=f'{rate:+d}%', pitch=f'{pitch:+d}Hz', volume=f'{volume:+d}%').save(path), 30)
+    if os.path.getsize(path) == 0: os.remove(path); raise RuntimeError('nothing came back')
 
 def envelope(path):
     raw = subprocess.run(['ffmpeg', '-loglevel', 'error', '-i', path, '-ac', '1', '-ar', '12000', '-f', 's16le', '-'], capture_output=True).stdout
@@ -34,17 +38,19 @@ def envelope(path):
     for i in range(0, len(a), n):
         seg = a[i:i + n]; out.append((sum(x * x for x in seg) / max(1, len(seg))) ** 0.5)
     peak = max(out) if out else 1
-    return [round(min(100, v / peak * 130)) for v in out], len(a) / 12000
+    env = [round(min(100, v / peak * 130)) for v in out]
+    last = max([i for i, v in enumerate(env) if v > 6] or [len(env) - 1])
+    return env, min(len(a) / 12000, (last + 1) / 30 + 0.12)
 
 async def main():
     L = json.load(open(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'lines.json'), encoding='utf-8'))
     ep = L['ep']; d = os.path.join(ROOT, 'audio', ep); os.makedirs(d, exist_ok=True)
     out = []
     for ln in L['lines']:
-        v, p, r = VOICES.get(ln['cast'], ('zh-CN-YunxiNeural', 0, 0)); fp, fr = FEEL.get(ln['feel'], (0, 0))
+        v, p, r, *vol = VOICES.get(ln['cast'], ('zh-CN-YunxiNeural', 0, 0)); fp, fr = FEEL.get(ln['feel'], (0, 0)); r += L.get('pace', 0) if ln['cast'] in ('yirui', 'yishuo') else 0
         name = f"{ln['i']:03d}.mp3"; path = os.path.join(d, name)
-        for attempt in range(4):
-            try: await say(ln['text'], v, p + fp, r + fr, path); break
+        for attempt in range(6):
+            try: await say(ln['text'], v, p + fp, r + fr, path, vol[0] if vol else 0); break
             except Exception as e: print('retry', ln['i'], e); await asyncio.sleep(2)
         env, dur = envelope(path)
         out.append({'i': ln['i'], 'file': f'{ep}/{name}', 'dur': round(dur, 2), 'env': env})

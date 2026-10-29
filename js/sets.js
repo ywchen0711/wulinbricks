@@ -8,8 +8,9 @@
 import * as THREE from '../lib/three.module.min.js';
 import { kit, P, BH, PH } from './brick/bricks.js';
 import { decorateManor, decorateTeahouse } from './decor.js';
+import { studio } from './studio.js';
 
-export const SETS = { road: { x: 0, z: 0 }, manor: { x: 200, z: 0 }, teahouse: { x: 400, z: 0 } };
+export const SETS = { road: { x: 0, z: 0 }, manor: { x: 200, z: 0 }, teahouse: { x: 400, z: 0 }, studio: { x: 600, z: 0 } };
 
 function board(text, w, h, { size = 64, bg = '#1a0c08', fg = '#f0c858', vertical = false } = {}) { // a name board, painted
   const c = document.createElement('canvas'); c.width = Math.round(w * 160); c.height = Math.round(h * 160); const g = c.getContext('2d');
@@ -106,4 +107,4 @@ function teahouse(scene) {
   return { lamps, tick, time() { lamps.forEach((l) => (l.intensity = 2.4)); } };
 }
 
-export function buildSets(scene) { return { manor: manor(scene), teahouse: teahouse(scene) }; }
+export function buildSets(scene) { return { manor: manor(scene), teahouse: teahouse(scene), studio: studio(scene, SETS.studio) }; }

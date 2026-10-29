@@ -41,7 +41,28 @@ function tone(f0, f1, dur, { at = 0, vol = 0.3, type = 'sine', a = 0.01 } = {}) 
   const t = now() + at, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g).connect(out); o.start(t); o.stop(t + dur + 0.05);
 }
+// recorded sounds (audio/sfx/<name>.mp3: the studio audience), decoded once and played at their moment
+const samples = {};
+export async function loadSamples(names) {
+  const dec = new OfflineAudioContext(2, 1, 44100);
+  await Promise.all(names.map(async (n) => { if (samples[n]) return; try { samples[n] = await dec.decodeAudioData(await (await fetch(`audio/sfx/${n}.mp3`)).arrayBuffer()); } catch (e) { /* the film plays on without it */ } }));
+}
 export const SFX = {
+  sample(name, vol = 1, rate = 1) { if (!ac || muted || !samples[name]) return; const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = samples[name]; s.playbackRate.value = rate; g.gain.value = vol; s.connect(g).connect(out); s.start(now()); },
+  // ---- the quiz show
+  ding() { if (!ac) return; for (const [f, at] of [[1318.5, 0], [1760, 0.13]]) { tone(f, f, 1.1, { at, vol: 0.32, a: 0.004 }); tone(f * 2, f * 2, 0.6, { at, vol: 0.08, a: 0.004 }); tone(f * 3.01, f * 3, 0.3, { at, vol: 0.04, a: 0.004 }); } }, // right!
+  wrong() { if (!ac) return; tone(150, 140, 0.55, { vol: 0.28, type: 'square', a: 0.005 }); tone(156, 146, 0.55, { vol: 0.2, type: 'sawtooth', a: 0.005 }); }, // the low buzz of a wrong answer
+  buzzer() { if (!ac) return; tone(990, 990, 0.16, { vol: 0.2, type: 'square', a: 0.003 }); tone(1980, 1980, 0.1, { vol: 0.05, a: 0.003 }); }, // a contestant's button
+  jingle(k = 1) { if (!ac) return; // the show's fanfare: up a bright arpeggio, then a chord with a shimmer
+    [523, 659, 784, 1047, 1319].forEach((f, i) => { tone(f, f, 0.22, { at: i * 0.09, vol: 0.16 * k, type: 'square', a: 0.004 }); tone(f / 2, f / 2, 0.22, { at: i * 0.09, vol: 0.12 * k, type: 'triangle' }); });
+    for (const f of [523, 659, 784, 1047]) { tone(f, f, 1.4, { at: 0.5, vol: 0.09 * k, type: 'sawtooth', a: 0.02 }); tone(f * 1.003, f * 1.003, 1.4, { at: 0.5, vol: 0.07 * k, type: 'square', a: 0.02 }); }
+    tone(131, 131, 1.2, { at: 0.5, vol: 0.3 * k, type: 'triangle' }); noise(1.6, { at: 0.5, f0: 9000, f1: 6000, q: 0.5, vol: 0.12 * k, type: 'highpass', a: 0.01 }); for (let i = 0; i < 10; i++) tone(2000 + rnd() * 3000, 2500 + rnd() * 3000, 0.15, { at: 0.55 + i * 0.08, vol: 0.03 * k }); },
+  drumroll(dur = 2.5) { if (!ac) return; for (let t = 0; t < dur; t += 0.045) noise(0.06, { at: t, f0: 400 + t / dur * 300, f1: 300, q: 0.9, vol: 0.12 + 0.25 * (t / dur), type: 'lowpass', a: 0.003 }); noise(1.4, { at: dur, f0: 9000, f1: 4000, q: 0.5, vol: 0.3, type: 'highpass', a: 0.005 }); tone(80, 50, 0.4, { at: dur, vol: 0.5 }); },
+  ticktock(n = 5) { if (!ac) return; for (let i = 0; i < n * 2; i++) { tone(i % 2 ? 900 : 1250, i % 2 ? 880 : 1200, 0.05, { at: i * 0.5, vol: 0.15, type: 'triangle', a: 0.002 }); } tone(660, 660, 0.7, { at: n, vol: 0.25, type: 'square', a: 0.005 }); },
+  swoosh() { if (!ac) return; noise(0.45, { f0: 300, f1: 4000, q: 1.2, vol: 0.25, a: 0.2 }); },
+  coins() { if (!ac) return; for (let i = 0; i < 16; i++) { const f = 2400 + rnd() * 2600; tone(f, f * 0.98, 0.25, { at: i * 0.07 + rnd() * 0.05, vol: 0.06, a: 0.002 }); tone(f * 1.5, f * 1.5, 0.12, { at: i * 0.07, vol: 0.02, a: 0.002 }); } },
+  warm(dur = 6) { if (!ac) return; for (const f of [262, 330, 392, 494]) { tone(f, f, dur, { vol: 0.05, type: 'triangle', a: 1.5 }); tone(f * 1.004, f * 1.004, dur, { vol: 0.035, a: 1.8 }); } }, // a soft pad, for the moment that matters
+  spark() { if (!ac) return; noise(0.12, { f0: 6000, f1: 2000, q: 1, vol: 0.4, a: 0.002 }); tone(2400, 400, 0.18, { vol: 0.15, type: 'sawtooth', a: 0.002 }); noise(0.6, { at: 0.08, f0: 3000, f1: 600, q: 0.7, vol: 0.25 }); for (let i = 0; i < 6; i++) tone(3000 + rnd() * 2000, 1500, 0.05, { at: 0.05 + rnd() * 0.4, vol: 0.06, a: 0.001 }); }, // a screen shorting out
   ambience: (k) => ambience(k),
   gavel() { if (!ac) return; tone(900, 600, 0.08, { vol: 0.6, type: 'square' }); noise(0.12, { f0: 2500, f1: 1200, q: 2, vol: 0.6, a: 0.002 }); tone(180, 120, 0.15, { vol: 0.5, type: 'triangle' }); },
   scream() { if (!ac || muted) return; const t = now(), o = ac.createOscillator(), b = ac.createBiquadFilter(), g = ac.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(700, t); o.frequency.linearRampToValueAtTime(1100, t + 0.25); o.frequency.exponentialRampToValueAtTime(420, t + 1.1); b.type = 'bandpass'; b.frequency.value = 1500; b.Q.value = 2.5; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2); o.connect(b).connect(g).connect(out); o.start(t); o.stop(t + 1.3); },

@@ -154,6 +154,28 @@ function torsoPrint(spec) {
     g.fillStyle = belt; g.fillRect(0, 214, 256, 30); g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(0, 242, 256, 4);
     if (R.tassel) { g.fillStyle = R.tassel; g.beginPath(); g.arc(196, 229, 9, 0, Math.PI * 2); g.fill(); }
   }
+  if (t === 'suit') { // a suit: a white shirt in the V of the lapels, a tie (or a bow), two buttons, a pocket square
+    const O = spec.outfit, sh = O.shirt || '#f4f4f0';
+    g.fillStyle = sh; g.beginPath(); g.moveTo(86, 0); g.lineTo(170, 0); g.lineTo(128, 150); g.closePath(); g.fill();
+    g.fillStyle = O.tie || '#c8282a';
+    if (O.bow) { g.beginPath(); g.moveTo(128, 18); g.lineTo(98, 4); g.lineTo(98, 34); g.closePath(); g.moveTo(128, 18); g.lineTo(158, 4); g.lineTo(158, 34); g.closePath(); g.fill(); g.beginPath(); g.arc(128, 18, 8, 0, Math.PI * 2); g.fill(); }
+    else { g.beginPath(); g.moveTo(118, 2); g.lineTo(138, 2); g.lineTo(134, 22); g.lineTo(143, 118); g.lineTo(128, 140); g.lineTo(113, 118); g.lineTo(122, 22); g.closePath(); g.fill(); if (O.tieStripe) { g.strokeStyle = O.tieStripe; g.lineWidth = 4; for (let y = 40; y < 120; y += 22) { g.beginPath(); g.moveTo(116, y); g.lineTo(140, y + 10); g.stroke(); } } }
+    g.strokeStyle = 'rgba(0,0,0,0.38)'; g.lineWidth = 7; g.beginPath(); g.moveTo(80, 0); g.lineTo(128, 160); g.lineTo(176, 0); g.stroke();
+    g.fillStyle = 'rgba(0,0,0,0.6)'; for (const y of [180, 214]) { g.beginPath(); g.arc(128, y, 6, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = O.pocket || '#f4f0e6'; g.beginPath(); g.moveTo(166, 74); g.lineTo(196, 74); g.lineTo(190, 62); g.lineTo(180, 68); g.lineTo(172, 60); g.closePath(); g.fill(); g.fillRect(166, 74, 30, 4);
+    if (O.pin) { g.fillStyle = O.pin; g.beginPath(); g.arc(70, 70, 9, 0, Math.PI * 2); g.fill(); }
+  }
+  if (t === 'uniform') { // a school uniform: a sailor collar, a scarf tied in front, a badge
+    const O = spec.outfit; g.fillStyle = O.collar || '#26335e'; g.beginPath(); g.moveTo(40, 0); g.lineTo(216, 0); g.lineTo(200, 40); g.lineTo(128, 120); g.lineTo(56, 40); g.closePath(); g.fill();
+    g.fillStyle = C.top || '#f4f4f0'; g.beginPath(); g.moveTo(96, 0); g.lineTo(160, 0); g.lineTo(128, 70); g.closePath(); g.fill();
+    g.strokeStyle = '#f4f4f0'; g.lineWidth = 5; g.beginPath(); g.moveTo(50, 8); g.lineTo(128, 108); g.lineTo(206, 8); g.stroke();
+    g.fillStyle = O.scarf || '#c8282a'; g.beginPath(); g.moveTo(110, 100); g.lineTo(146, 100); g.lineTo(156, 160); g.lineTo(128, 140); g.lineTo(100, 160); g.closePath(); g.fill();
+    g.fillStyle = '#f0c040'; g.beginPath(); g.arc(180, 150, 10, 0, Math.PI * 2); g.fill();
+  }
+  if (t === 'print') { // a tee with a picture on it: a drumstick, a bolt of lightning, a heart...
+    const O = spec.outfit;
+    g.fillStyle = O.ink || '#ffffff'; g.font = `bold ${O.size || 96}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(O.pic || '★', 128, 130);
+  }
   if (spec.outfit?.apron) { g.fillStyle = spec.outfit.apron; g.beginPath(); g.moveTo(58, 0); g.lineTo(198, 0); g.lineTo(186, 160); g.lineTo(70, 160); g.closePath(); g.fill(); g.strokeStyle = 'rgba(0,0,0,0.15)'; g.lineWidth = 4; g.stroke(); g.fillStyle = '#e8a0b0'; g.beginPath(); g.arc(128, 60, 14, 0, Math.PI * 2); g.fill(); }
   // the shape's uvs are in millimetres: x -7.8..7.8, y 0..12.8
   const t2 = new THREE.CanvasTexture(c); t2.colorSpace = THREE.SRGBColorSpace; t2.repeat.set(1 / 15.6, 1 / 12.8); t2.offset.set(0.5, 0); t2.wrapS = t2.wrapT = THREE.ClampToEdgeWrapping; return t2;

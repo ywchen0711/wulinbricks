@@ -42,7 +42,7 @@ function autoCam() {
 // ---------------------------------------------------------------- the page
 function texts() {
   document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
-  $('modes').innerHTML = [['practice', T('練功場', 'Practice')], ['duel', T('對打', 'Duel')]].map(([m, n]) => `<button data-mode="${m}" class="${S.mode === m ? 'on' : ''}">${n}</button>`).join('') + `<a href="film.html${lang === 'en' ? '?lang=en' : ''}">${T('🎬 劇情', '🎬 Story')}</a>`;
+  $('modes').innerHTML = [['practice', T('練功場', 'Practice')], ['duel', T('對打', 'Duel')]].map(([m, n]) => `<button data-mode="${m}" class="${S.mode === m ? 'on' : ''}">${n}</button>`).join('') + `<a href="film.html${lang === 'en' ? '?lang=en' : ''}">${T('🎬 劇情', '🎬 Story')}</a><a href="film.html?ep=show1${lang === 'en' ? '&lang=en' : ''}">${T('🏆 一字千金', '🏆 A Word Worth Gold')}</a>`;
   $('card').hidden = S.mode !== 'practice'; $('duelp').hidden = S.mode !== 'duel';
   $('slow').textContent = T('慢動作', 'Slow motion'); $('reset').textContent = T('重置靶子', 'Reset targets'); $('reset').hidden = S.mode !== 'practice'; $('auto').textContent = T('🎬 自動鏡頭', '🎬 Auto camera'); $('lang').textContent = lang === 'zh' ? 'EN' : '中';
   $('slow').classList.toggle('on', S.slow);

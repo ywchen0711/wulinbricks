@@ -2,6 +2,7 @@
 //   token 執法令: a gilt plate with 令 on it, on a red cord (the Law Hall's warrant token)
 //   jade  青龍鑰: a quarter-disc of green jade carved with a dragon, glowing a little (one of the four keys)
 //   cup   a white teacup
+//   ball  a football;  board:字  an answer board with 字 written on it;  card  a question card
 import * as THREE from '../lib/three.module.min.js';
 import { plastic, rbox } from './brick/minifig.js';
 
@@ -18,7 +19,17 @@ export function makeProp(kind) {
     const m = new THREE.MeshPhysicalMaterial({ map: jadeTex(), roughness: 0.15, clearcoat: 1, transmission: 0.2, emissive: '#2aa86a', emissiveIntensity: 0.2 });
     const g = new THREE.CylinderGeometry(0.11, 0.11, 0.03, 24, 1, false, 0, Math.PI / 2); g.rotateX(Math.PI / 2); add(new THREE.Mesh(g, m));
     const glow = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 12), new THREE.MeshBasicMaterial({ color: '#5ad890', transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false })); glow.position.set(0.05, 0.05, 0); G.add(glow); G.userData.glow = glow;
-  } else if (kind === 'cup') { add(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.035, 0.06, 16), plastic('#f0ece0'))); }
+  } else if (kind === 'ball') { // a football, white with black patches
+    const c = document.createElement('canvas'); c.width = 256; c.height = 128; const g = c.getContext('2d'); g.fillStyle = '#f6f4ee'; g.fillRect(0, 0, 256, 128); g.fillStyle = '#1a1a1a';
+    for (const [x, y] of [[32, 30], [96, 70], [160, 30], [224, 70], [64, 110], [192, 110], [128, 4]]) { g.beginPath(); for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; g.lineTo(x + Math.cos(a) * 16, y + Math.sin(a) * 14); } g.fill(); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; add(new THREE.Mesh(new THREE.SphereGeometry(0.16, 24, 16), new THREE.MeshPhysicalMaterial({ map: t, roughness: 0.4, clearcoat: 0.4 })));
+  } else if (kind.startsWith('board:')) { // an answer board, a character (or a few) written on it in black marker
+    const text = kind.slice(6), c = document.createElement('canvas'); c.width = 320; c.height = 240; const g = c.getContext('2d');
+    g.fillStyle = '#fbfbf6'; g.fillRect(0, 0, 320, 240); g.strokeStyle = '#2a64b8'; g.lineWidth = 12; g.strokeRect(6, 6, 308, 228); g.fillStyle = '#141414';
+    g.font = `900 ${text.length > 2 ? 120 : 176}px "LXGW WenKai TC", "Noto Serif TC", serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 160, 128);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; const back = plastic('#2a64b8'), face = new THREE.MeshPhysicalMaterial({ map: t, roughness: 0.5 });
+    add(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.32, 0.015), [back, back, back, back, face, back]));
+  } else if (kind === 'card') { add(new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.28, 0.01), plastic('#f4ecd4'))); } else if (kind === 'cup') { add(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.035, 0.06, 16), plastic('#f0ece0'))); }
   return G;
 }
 

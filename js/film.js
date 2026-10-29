@@ -7,20 +7,21 @@
 //   film.html?ep=ep1&t=120&lang=en; window.FILM for tests.
 import * as THREE from '../lib/three.module.min.js';
 import { createWorld, orbit, V } from './engine.js';
-import { wake, mute, SFX, audio, offline, setClock, recordTap } from './sound.js';
+import { wake, mute, SFX, audio, offline, setClock, recordTap, loadSamples } from './sound.js';
 import { CAST } from './cast/index.js';
 import { SETS } from './sets.js';
 import { propShelf } from './props.js';
 import { EP1 } from './films/ep1.js';
 import { PROTO } from './films/proto.js';
+import { SHOW1 } from './films/show1.js';
 
-const EPS = { ep1: EP1, proto: PROTO };
+const EPS = { ep1: EP1, proto: PROTO, show1: SHOW1 };
 const $ = (id) => document.getElementById(id), q = new URLSearchParams(location.search);
 let lang = q.get('lang') === 'en' ? 'en' : 'zh';
 const EP = EPS[q.get('ep')] || EP1;
 const cv = $('cv'), W = createWorld(cv, { targets: false, dof: true }), O = orbit(cv, () => { $('cam').hidden = false; });
 const props = propShelf(W.scene);
-const S = { t: 0, playing: false, cue: 0, A: {}, shot: -1, cam: null, scene: -1, sim: false, voice: null, buffers: {}, heard: new Set(), src: null, intro: null, callout: null, slowmo: null, title: null, caption: null };
+const S = { ticks: [], t: 0, playing: false, cue: 0, A: {}, shot: -1, cam: null, scene: -1, sim: false, voice: null, buffers: {}, heard: new Set(), src: null, intro: null, callout: null, slowmo: null, title: null, caption: null };
 const scenes = EP.scenes;
 const origin = () => SETS[scenes[Math.max(0, S.scene)]?.set || 'road'];
 // the same chances every time a scene is played, so that seeking to a moment shows what playing to it would
@@ -42,6 +43,10 @@ const F = {
   give: (name, who, side, off) => props.hold(name, S.A[who], side, off),
   hide: (name) => props.hide(name),
   prop: (name) => props.items[name],
+  set: () => W.stage.sets[scenes[S.scene]?.set], // the set in use, for sets that do things (the studio's screen, scores, audience)
+  now: () => S.t,
+  every: (fn) => { S.ticks.push(fn); }, // run each moment from now (fn(t)) until it returns false, or the scene ends
+  fig: (name) => S.A[name],
 };
 
 // ---------------------------------------------------------------- the cast and the scenes
@@ -52,7 +57,7 @@ function build() {
 function enterScene(i) {
   S.scene = i; const sc = scenes[i], O0 = SETS[sc.set]; Math.random = seeded(1000 + i * 77);
   W.stage.time(sc.tod || 'day'); W.stage.focus(O0.x + (sc.focus?.[0] ?? 0), O0.z + (sc.focus?.[1] ?? 2));
-  props.clear(); W.fx.reset();
+  props.clear(); W.fx.reset(); S.ticks = []; W.stage.sets[sc.set]?.reset?.();
   for (const [name, f] of Object.entries(S.A)) {
     const pl = sc.place?.[name];
     f.move = null; f.react = null; f.walk = null; f.gesture = null; f.push.set(0, 0, 0); f.mood = null; f.still = false; f.stayDown = false; f.yawTo = null; f.attend = null; f.lookLock = false; f.feel = null; f.act = null; if (f.hero.loose) f.hero.loose = null;
@@ -73,6 +78,7 @@ const sceneAt = (t) => { let i = 0; while (i < scenes.length - 1 && scenes[i + 1
 const durOf = (i) => S.voice?.lines?.[i]?.dur ?? Math.max(1.2, EP.lines[i][2].length * 0.24);
 const lineAt = (t) => { for (let i = EP.lines.length - 1; i >= 0; i--) { const L = EP.lines[i]; if (t >= L[0] && t < L[0] + durOf(i) + 0.35) return i; if (L[0] < t - 30) break; } return -1; };
 async function loadVoices() {
+  if (EP.samples) await loadSamples(EP.samples);
   if (!EP.voiced) { S.voice = null; return; }
   try { S.voice = await (await fetch(`audio/${EP.id}.json?v=${EP.audioV || 1}`)).json(); } catch (e) { S.voice = null; }
 }
@@ -106,6 +112,7 @@ function advance(dt) {
   S.t += dt;
   const si = sceneAt(S.t); if (si !== S.scene) enterScene(si);
   while (S.cue < EP.cues.length && EP.cues[S.cue][0] <= S.t) { const [ct, fn] = EP.cues[S.cue]; if (ct >= scenes[S.scene].t) fn(S.A, F); S.cue++; }
+  if (S.ticks.length) S.ticks = S.ticks.filter((fn) => fn(S.t) !== false);
   const li = lineAt(S.t);
   for (const f of Object.values(S.A)) { f.talk = 0; if (f.feelUntil && S.t > f.feelUntil) { f.feel = null; f.feelUntil = 0; } }
   if (li >= 0) attention(li);
