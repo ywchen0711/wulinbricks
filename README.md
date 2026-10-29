@@ -82,7 +82,7 @@ New for it:
 The brothers on a children's quiz show of Chinese characters, hosted by 曾國城, in a television studio of bricks
 (js/studio.js): a great screen under the show's name, six podiums with name plates, lit scores and buzzers, the host's
 desk, coin towers, a truss of lamps with sweeping beams, an audience of bricks people on four rows who laugh, clap,
-cheer and go "aww" (their voices are many neural voices layered, tools/crowd.py, in audio/sfx), and confetti and gold
+cheer and go "aww" (real audience recordings, all CC0, cut and layered by tools/crowd_real.py into audio/sfx; the sources are listed there), and confetti and gold
 coins at the end. Six children (js/cast/show.js): 陳小雷 who buzzes before the question, 林書涵 who reads the dictionary
 for fun, 奕叡 with his saber and his "在下", 奕碩 with his ball (the host confiscates it), 王大寶 whose head is full of
 food, and 張圓圓 who whispers and is never wrong.

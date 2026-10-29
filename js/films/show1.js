@@ -51,10 +51,14 @@ function scene(o, write) {
 // ---------------------------------------------------------------- what happens on the floor, often
 const set = (F) => F.set();
 const buzz = (n) => (A, F) => { A[n].gest('buzz'); set(F).buzz(POD[n]); F.sfx('buzzer'); };
-const right = (n, score) => (A, F) => { F.sfx('ding'); set(F).score(POD[n], score, 'good'); set(F).crowd('clap', 2.4); F.sfx('sample', 'applause', 0.55); A[n].gest(n === 'rui' ? 'fist' : 'cheer'); };
+const right = (n, score) => (A, F) => { F.sfx('ding'); set(F).score(POD[n], score, 'good'); set(F).crowd('clap', 2.4); F.sfx('sample', pick(F, 'applause'), 0.55); A[n].gest(n === 'rui' ? 'fist' : 'cheer'); };
 const wrong = (n) => (A, F) => { F.sfx('wrong'); set(F).flash(POD[n], 'bad'); };
-const laugh = (k = 1, who = []) => (A, F) => { F.sfx('sample', k > 1.5 ? 'laugh2' : k < 0.8 ? 'laugh3' : 'laugh1', 0.8 + 0.2 * k); set(F).crowd('laugh', 1.8 + k); for (const n of who) A[n]?.gest(n === 'host' ? 'laughbig' : 'laugh'); };
-const clap = (len = 3) => (A, F) => { F.sfx('sample', len > 4 ? 'applause_long' : 'applause', 0.7); set(F).crowd('clap', len); };
+// the audience's sounds are real recordings in a few takes each (tools/crowd_real.py); which take, by the moment, so
+// that no two laughs in a row are the same one and a seek hears what playing would
+const TAKES = { laugh_s: 4, laugh_m: 6, laugh_b: 4, aww: 2, ooh: 4, cheer: 2, applause: 3 };
+const pick = (F, base) => base + (1 + Math.floor(F.now() * 7.31) % TAKES[base]);
+const laugh = (k = 1, who = []) => (A, F) => { F.sfx('sample', pick(F, k > 1.5 ? 'laugh_b' : k < 0.8 ? 'laugh_s' : 'laugh_m'), 0.75 + 0.15 * k); set(F).crowd('laugh', 1.8 + k); for (const n of who) A[n]?.gest(n === 'host' ? 'laughbig' : 'laugh'); };
+const clap = (len = 3) => (A, F) => { F.sfx('sample', len > 4 ? 'applause_long' : pick(F, 'applause'), 0.7); set(F).crowd('clap', len); };
 const screen = (mode, d) => (A, F) => { set(F).screen(mode, d); F.sfx('swoosh'); };
 const SCORES = (list) => (A, F) => { set(F).names(NAMES); set(F).scores(list); };
 // everyone in their places: the host at his mark, the children behind their podiums
@@ -71,7 +75,7 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], caption: { zh: '《龍門雙
 }, (sc) => {
   sc.S({ kind: 'at', pos: [0, 4.6, 9.4], look: [0, 2.2, -4.5], fov: 50, drift: [0, -0.1, -0.22] })
     .C((A, F) => F.sfx('drumroll', 2.6)).W(2.6)
-    .C((A, F) => { set(F).lights('party'); set(F).screen('logo', {}); F.sfx('jingle'); F.sfx('sample', 'cheer', 0.8); set(F).crowd('cheer', 4); }).W(0.6)
+    .C((A, F) => { set(F).lights('party'); set(F).screen('logo', {}); F.sfx('jingle'); F.sfx('sample', pick(F, 'cheer'), 0.8); set(F).crowd('cheer', 4); }).W(0.6)
     .C((A, F) => F.title(6)).W(5.6)
     .C((A, F) => { set(F).lights('show'); F.walk('host', HX, HZ, { speed: 1.5 }); A.host.gest('wave'); F.sfx('sample', 'applause_long', 0.7); set(F).crowd('clap', 5); })
     .S({ kind: 'at', pos: [-3.2, 1.5, 4.2], look: [-7.5, 1.2, 1.0], fov: 36, follow: 'host' }).W(3.2)
@@ -113,7 +117,7 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], place: placeAll(), setup: (A
     .L('host', '還有你背後那把刀……我們是比寫字，不是比砍字喔。', 'And that saber on your back… on this show we write words, we don’t chop them.', 'happy', { cue: (A) => A.host.gest('point'), at: 1.0 })
     .C(laugh(1.6)).W(1.2)
     .L('rui', '主持人放心。刀不出鞘，只出字。', 'Have no fear, sir. The blade stays sheathed. Only words come out.', 'proud')
-    .C((A, F) => { F.sfx('sample', 'ooh', 0.8); set(F).crowd('ooh', 2); }).W(0.8)
+    .C((A, F) => { F.sfx('sample', pick(F, 'ooh'), 0.8); set(F).crowd('ooh', 2); }).W(0.8)
     .L('host', '好帥！這句我要拿去用。', 'So cool! I’m stealing that line.', 'excited', { cue: (A) => A.host.gest('cheer') })
     .C(laugh(0.7)).C((A) => { A.shuo.still = false; }).C(visit('shuo')).W(1.2).C(mic('shuo'))
   // 奕碩
@@ -126,7 +130,7 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], place: placeAll(), setup: (A
       const to = h.clone(); to.x += 0.1; to.y = 1.05; to.z += 0.25; fly(F, 'ball', from, to, 0.9, 1.6, () => { F.sfx('thud', 0.5); A.host.gest('catch', { hold: true }); F.give('ball', 'host', 'R', [0, 0.02, 0.12]); });
     })
     .S({ kind: 'at', pos: [pod('shuo').x + 2.4, 1.3, pod('shuo').z + 3.2], look: [pod('shuo').x - 0.2, 1.4, pod('shuo').z + 0.8], fov: 46 }).W(1.4)
-    .C((A, F) => { F.sfx('sample', 'ooh', 0.9); set(F).crowd('ooh', 2); }).W(0.6)
+    .C((A, F) => { F.sfx('sample', pick(F, 'ooh'), 0.9); set(F).crowd('ooh', 2); }).W(0.6)
     .L('host', '……好，這顆球，我先幫你保管。我們這是「一字千金」，不是「一腳千金」。', '…Right. I’ll look after this ball for you. This show is “A Word Worth Gold”, not “A Kick Worth Gold”.', 'calm', { shot: { kind: 'two', on: ['host', 'shuo'], side: -1, dist: 2.2 } })
     .C(laugh(2, ['rui', 'bao', 'lei'])).W(1.6)
     .L('shuo', '啊——我的球！', 'Noooo — my ball!', 'sad', { cue: (A) => A.shuo.gest('scared') })
@@ -246,7 +250,7 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], place: placeAll(), setup: (A
     .L('host', '第二關結束！奕叡、奕碩兩百分領先，大寶……還在暖身。', 'End of round two! Yi Rui and Yi Shuo lead with two hundred. Dabao… is still warming up.', 'happy', { shot: KIDS })
     .C(laugh(1)).W(0.6)
     .L('bao', '我是大器晚成！', 'I’m a late bloomer!', 'proud', { cue: (A) => A.bao.gest('cheer') })
-    .C((A, F) => { F.sfx('sample', 'ooh', 0.8); set(F).crowd('ooh', 1.5); }).W(0.8)
+    .C((A, F) => { F.sfx('sample', pick(F, 'ooh'), 0.8); set(F).crowd('ooh', 1.5); }).W(0.8)
     .L('host', '欸！這個成語你用得很好耶！可惜這一關已經結束了。', 'Hey! You used that idiom perfectly! Shame the round’s over.', 'surprised', { shot: close('host', { dist: 1.7 }) })
     .C(laugh(1.8, ['bao'])).W(1.4);
 });
@@ -299,7 +303,7 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], place: placeAll(), setup: (A
     .L('host', '第三關結束！我們來看看分數——', 'End of round three! Let’s look at the scores —', 'excited', { shot: SCREEN, cue: (A, F) => { F.sfx('drumroll', 2.2); set(F).screen('scores', { title: '第三關結束', rows: [['奕叡', 400, '#2a3a8a'], ['奕碩', 400, '#d8462a'], ['林書涵', 300, '#3a7ad8'], ['張圓圓', 300, '#e86aa0'], ['王大寶', 200, '#f08a2a'], ['陳小雷', 100, '#e8b81a']] }); }, at: 1.2 })
     .W(1.6)
     .L('host', '最高分是……奕叡跟奕碩，一樣四百分！兄弟倆一起進入決戰！', 'At the top… Yi Rui and Yi Shuo, four hundred each! The brothers go through to the final together!', 'excited', { shot: BROS, cue: (A, F) => { F.sfx('jingle'); set(F).lights('party'); }, at: 2.4 })
-    .C((A, F) => { F.sfx('sample', 'cheer', 0.9); set(F).crowd('cheer', 4); A.shuo.gest('jump'); }).W(1.6)
+    .C((A, F) => { F.sfx('sample', pick(F, 'cheer'), 0.9); set(F).crowd('cheer', 4); A.shuo.gest('jump'); }).W(1.6)
     .L('shuo', '哥！我們一起進決賽了！', 'Brother! We’re both in the final!', 'excited', { shot: BROS })
     .L('rui', '嗯。決賽場上，可不讓你。', 'Mm. In the final, I won’t go easy on you.', 'proud', { keep: true })
     .L('shuo', '我才不要你讓呢！', 'I don’t want you to!', 'angry', { keep: true })
@@ -328,7 +332,7 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], place: placeAll(), setup: (A
     .C(boards('ㄉㄚˊ', 'ㄉㄚˊ')).S(BROS).W(0.5)
     .L('rui', 'ㄉㄚˊ。', '“Da”.', 'calm', { keep: true, say: '達。' })
     .L('shuo', 'ㄉㄚˊ！', '“Da”!', 'excited', { keep: true, gap: 0.05, say: '達！' })
-    .C((A, F) => { F.sfx('ding'); set(F).score(2, 1400); set(F).score(3, 1400); set(F).crowd('clap', 3); F.sfx('sample', 'applause', 0.7); }).W(1.4)
+    .C((A, F) => { F.sfx('ding'); set(F).score(2, 1400); set(F).score(3, 1400); set(F).crowd('clap', 3); F.sfx('sample', pick(F, 'applause'), 0.7); }).W(1.4)
     .L('host', '兩個都對！你們家是不是每天都在寫龍啊？', 'Both right! Does your family write dragons every day?', 'surprised', { shot: close('host', { dist: 1.7 }) })
     .C(down)
     .L('shuo', '我們家叫龍門刀莊，門口就有兩條龍！', 'Our home is called the Longmen — the Dragon Gate — Saber Manor! There are two dragons on the gate!', 'excited')
@@ -338,7 +342,7 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], place: placeAll(), setup: (A
     .L('host', '時間到！亮板！', 'Time! Boards up!', 'excited', { shot: HOSTW })
     .C(boards('龜', '龜')).S(BROS).W(0.8)
     .L('host', '我來數一數……一、二、三……十六畫！兩隻烏龜都對！', 'Let me count… one, two, three… sixteen strokes! Both tortoises are right!', 'excited', { shot: { kind: 'prop', on: 'shuo:龜', fov: 30 } })
-    .C((A, F) => { F.sfx('ding'); set(F).score(2, 2400); set(F).score(3, 2400); set(F).crowd('clap', 3); F.sfx('sample', 'applause', 0.7); }).W(1.4).C(down)
+    .C((A, F) => { F.sfx('ding'); set(F).score(2, 2400); set(F).score(3, 2400); set(F).crowd('clap', 3); F.sfx('sample', pick(F, 'applause'), 0.7); }).W(1.4).C(down)
     .L('host', '怎麼又平手？製作單位，題目還有嗎？', 'A draw again? Producers — do we have any questions left?', 'worried', { shot: close('host', { dist: 1.6 }) })
     .C(laugh(1.6)).W(1.3)
     .C((A, F) => { F.sfx('warm', 22); set(F).lights('dim'); })
@@ -352,15 +356,15 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], place: placeAll(), setup: (A
     .L('host', '奕碩，換你。', 'Yi Shuo, your turn.', 'calm', { shot: HOSTW })
     .C(board('shuo', '哥')).S({ kind: 'prop', on: 'shuo:哥', fov: 30 }).W(1.2)
     .L('shuo', '哥！我心中最重要的人，是我哥！', '“Big brother”! The person who matters most to me is my big brother!', 'excited', { shot: close('shuo', { dist: 1.5 }) })
-    .C((A, F) => { F.sfx('sample', 'aww', 1); set(F).crowd('aww', 4); F.face('rui', 'shuo'); }).S(BROS).W(2.4)
+    .C((A, F) => { F.sfx('sample', pick(F, 'aww'), 1); set(F).crowd('aww', 4); F.face('rui', 'shuo'); }).S(BROS).W(2.4)
     .L('host', '哥哥寫「弟」，弟弟寫「哥」……', 'The big brother writes “little brother”, the little brother writes “big brother”…', 'sad', { shot: { kind: 'close', on: 'host', side: -1, dist: 1.7, push: 0.05 } })
     .L('host', '我主持這麼多年，第一次在節目上，被小朋友弄哭……', 'All these years hosting, and this is the first time a kid has made me cry on air…', 'sad', { cue: (A) => A.host.gest('cry', { hold: true }), at: 0.6 })
-    .C(laugh(0.6)).C((A, F) => { F.sfx('sample', 'aww', 0.7); }, 0.4).W(1.6).C((A) => { A.host.gesture = null; })
+    .C(laugh(0.6)).C((A, F) => { F.sfx('sample', pick(F, 'aww'), 0.7); }, 0.4).W(1.6).C((A) => { A.host.gesture = null; })
     .L('host', '這題我判不下去。我宣布——今天的冠軍：奕叡、奕碩，平手！', 'I can’t judge this one. I declare — tonight’s champions: Yi Rui and Yi Shuo, a draw!', 'excited', { shot: MASTER, cue: (A, F) => { F.sfx('drumroll', 1.6); }, at: 1.2 })
-    .C((A, F) => { F.callout({ zh: '平手！', en: 'A draw!' }, { dur: 2.2 }); set(F).screen('tie', { sub: '雙冠軍　奕叡・奕碩' }); set(F).lights('party'); set(F).confetti(); F.sfx('jingle'); F.sfx('coins'); F.sfx('sample', 'cheer', 1); set(F).crowd('cheer', 6); down(A, F); A.shuo.gest('jump'); for (const n of ['lei', 'han', 'bao', 'yuan']) A[n].gest('clap'); })
+    .C((A, F) => { F.callout({ zh: '平手！', en: 'A draw!' }, { dur: 2.2 }); set(F).screen('tie', { sub: '雙冠軍　奕叡・奕碩' }); set(F).lights('party'); set(F).confetti(); F.sfx('jingle'); F.sfx('coins'); F.sfx('sample', pick(F, 'cheer'), 1); set(F).crowd('cheer', 6); down(A, F); A.shuo.gest('jump'); for (const n of ['lei', 'han', 'bao', 'yuan']) A[n].gest('clap'); })
     .S({ kind: 'at', pos: [0, 2.2, 4.6], look: [0, 1.6, -2.4], fov: 52, drift: [0, 0.06, -0.15] }).W(2.6)
     .C((A, F) => { F.walk('shuo', pod('shuo').x - 0.45, pod('shuo').z - 0.95, { speed: 1.2 }); F.walk('rui', pod('rui').x + 0.45, pod('rui').z - 0.95, { speed: 1.2 }); }).W(1.2)
-    .C((A, F) => { F.face('shuo', 'rui'); F.face('rui', 'shuo'); A.shuo.gest('hug', { hold: true }); A.rui.gest('hug', { hold: true }); F.sfx('sample', 'aww', 0.6); }).S({ kind: 'two', on: ['rui', 'shuo'], side: -1, dist: 2.2 }).W(1.2)
+    .C((A, F) => { F.face('shuo', 'rui'); F.face('rui', 'shuo'); A.shuo.gest('hug', { hold: true }); A.rui.gest('hug', { hold: true }); F.sfx('sample', pick(F, 'aww'), 0.6); }).S({ kind: 'two', on: ['rui', 'shuo'], side: -1, dist: 2.2 }).W(1.2)
     .L('shuo', '哥！我們平手！跟在家裡比的時候一樣！', 'Brother! It’s a draw! Just like when we have a go at home!', 'excited', { keep: true })
     .L('rui', '再來一百次，也是平手。', 'A hundred more times, and still a draw.', 'proud', { keep: true })
     .C(clap(5)).W(2.0);
@@ -387,7 +391,7 @@ scene({ set: 'studio', tod: 'night', focus: [0, 0], place: { ...placeAll(), rui:
       fly(F, 'ball', from, P3(F, 0.4, 2.7, -5.3), 0.75, 1.2, () => { F.sfx('spark'); F.sfx('crash'); F.set().screen('static'); F.set().lights('show'); fly(F, 'ball', P3(F, 0.4, 2.7, -5.3), P3(F, 0.9, 0.16, -3.6), 0.7, 0.4, () => F.sfx('bounce')); });
     }, 0.1)
     .S({ kind: 'at', pos: [2.4, 1.6, 2.6], look: [0, 2.3, -5.4], fov: 46 }).W(1.6)
-    .C((A, F) => { F.sfx('sample', 'ooh', 1); set(F).crowd('ooh', 2.4); for (const n of ['lei', 'han', 'bao', 'yuan', 'rui']) A[n].gest('scared'); }).W(1.6)
+    .C((A, F) => { F.sfx('sample', pick(F, 'ooh'), 1); set(F).crowd('ooh', 2.4); for (const n of ['lei', 'han', 'bao', 'yuan', 'rui']) A[n].gest('scared'); }).W(1.6)
     .L('host', '……下次比賽，請不要帶球！', '…Next time, please DON’T bring a ball!', 'shout', { shot: close('host', { dist: 1.6 }), cue: (A) => A.host.gest('facepalm'), at: 1.4 })
     .C(laugh(2.4, ['bao', 'lei', 'han', 'yuan', 'rui'])).S(MASTER).W(3.0)
     .L('shuo', '……對不起啦！', '…Sorry!', 'shy', { shot: close('shuo') })
@@ -406,7 +410,7 @@ for (const s of SCENES) {
 cues.sort((a, b) => a[0] - b[0]); shots.sort((a, b) => a[0] - b[0]);
 export const SHOW1 = {
   id: 'show1', len: T0, voiced: true, audioV: 1, pace: 12, scenes, lines, cues, shots, say,
-  samples: ['laugh1', 'laugh2', 'laugh3', 'aww', 'ooh', 'cheer', 'applause', 'applause_long'],
+  samples: ['applause_long', ...Object.entries(TAKES).flatMap(([b, n]) => Array.from({ length: n }, (_, i) => b + (i + 1)))],
   title: { zh: ['龍門雙奕　番外篇', '一字千金'], en: ['The Longmen Brothers — a special', 'A Word Worth Gold'] },
   end: { zh: '《一字千金》兒童特別節目　完', en: 'The End' },
   blurb: { zh: '奕叡和奕碩去參加曾國城主持的國字比賽《一字千金》！六個小朋友：先按再想的小雷、把辭典當故事書的書涵、滿腦子食物的大寶、小聲到要蹲下來聽的圓圓……最後的決戰，兄弟倆寫下的字讓主持人判不下去。播放中可以拖曳畫面轉視角。', en: 'Yi Rui and Yi Shuo go on “A Word Worth Gold”, a children’s quiz show of Chinese characters. Six kids: one who buzzes before he thinks, one who reads the dictionary for fun, one whose head is full of food, one who whispers… and in the final, the brothers write words the host just can’t judge. Drag the picture to look around while it plays.' },
