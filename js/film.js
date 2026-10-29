@@ -255,6 +255,7 @@ const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(
 function play() { wake(); if (S.t >= EP.len - 0.05) seek(0); S.playing = true; $('pp').textContent = '❚❚'; $('start').hidden = true; SFX.ambience(scenes[S.scene]?.ambience || null); const li = lineAt(S.t); if (li >= 0) S.heard.delete(li); }
 function pause() { S.playing = false; $('pp').textContent = '▶'; S.src?.stop?.(); SFX.ambience(null); for (let i = 0; i < EP.lines.length; i++) if (EP.lines[i][0] < S.t) S.heard.add(i); }
 $('go').onclick = play;
+$('dl').onclick = () => { $('start').hidden = true; if (!REC.on) record(); }; // straight from the start screen: play it through once, recorded
 $('rec').onclick = () => (REC.on ? null : record());
 $('pp').onclick = () => (S.playing ? pause() : play());
 $('scrub').onchange = (e) => { const was = S.playing; seek(+e.target.value * EP.len); if (was) { const li = lineAt(S.t); if (li >= 0) S.heard.delete(li); SFX.ambience(scenes[S.scene]?.ambience || null); } };
@@ -264,7 +265,7 @@ cv.addEventListener('dblclick', () => $('cam').click());
 addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); $('pp').click(); } if (e.code === 'ArrowRight') { seek(Math.min(EP.len, S.t + 10)); } if (e.code === 'ArrowLeft') { seek(Math.max(0, S.t - 10)); } });
 function texts() {
   document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
-  $('st').innerHTML = `<small>${EP.title[lang][0]}</small>${EP.title[lang][1]}`; $('go').textContent = lang === 'zh' ? '▶ 開演' : '▶ Play';
+  $('st').innerHTML = `<small>${EP.title[lang][0]}</small>${EP.title[lang][1]}`; $('go').textContent = lang === 'zh' ? '▶ 開演' : '▶ Play'; $('dl').textContent = lang === 'zh' ? '⬇ 下載影片（播完自動存檔）' : '⬇ Download video (saves when it ends)';
   $('rec').textContent = lang === 'zh' ? '⬇ 下載影片' : '⬇ Download video'; $('rec').title = lang === 'zh' ? '從頭播放一次並錄下來，播完自動存成影片檔' : 'Plays it through once and records it; saves a video file when it ends';
   $('lang').textContent = lang === 'zh' ? 'EN' : '中'; $('cam').textContent = lang === 'zh' ? '🎬 回到導演鏡頭' : '🎬 Director’s camera'; $('back').textContent = lang === 'zh' ? '← 角色與招式' : '← Characters & moves';
   $('blurb').textContent = (EP.blurb || {})[lang] || ''; document.title = `${EP.title.zh[0]} ${EP.title.zh[1]}`;
