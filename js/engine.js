@@ -111,6 +111,7 @@ export function createWorld(canvas, { targets: withTargets = true, dof = false }
         f.F.face(M.face(f.t)); speed = Math.min(1, (Math.abs(p.armR - f.lastArm) + Math.abs(p.hipR - f.lastHip)) / Math.max(1e-4, mdt) / 12); active = { f, glow, gather, cutting, tint: M.tint };
       } else {
         rest = f.CH.idle(W.clock + f.phase); p = { ...DEF, ...rest.pose }; let face = { ...rest.face }; delete face.blink; // blinks come from the acting layer
+        if (f.live) { Object.assign(p, f.live); if (rest.ball) rest.ball = { rest: true }; } // a pose from outside (the camera, in 體感 mode) in place of the resting one
         if (f.walk) { // walking to a point: legs and arms swinging, turned to where he goes
           const to = f.walk.to, here = V(f.mark.x, 0, f.mark.z), d = to.clone().sub(here), L = d.length(), want = Math.atan2(d.x, d.z), turn = angWrap(want - f.mark.yaw);
           const top = f.walk.speed * (Math.abs(turn) > 1.2 ? 0.35 : 1), stopAt = Math.sqrt(2 * 2.5 * L); f.walk.v = Math.min(top, stopAt, (f.walk.v || 0) + 3.2 * mdt); // ease up to pace, and down to a stop
@@ -127,7 +128,7 @@ export function createWorld(canvas, { targets: withTargets = true, dof = false }
         if ((f.gesture || f.still) && rest.ball) rest.ball = { rest: true };
         if (f.gesture) { const g = f.gesture, k = Math.min(1, g.t / 0.25) * (g.hold ? 1 : Math.min(1, (g.len - g.t) / 0.3)); const gp = typeof g.G.pose === 'function' ? g.G.pose(g.t) : g.G.pose; for (const key in gp) p[key] = p[key] + (gp[key] - p[key]) * Math.max(0, k); if (g.G.face) face = g.G.face; g.t += mdt; if (!g.hold && g.t >= g.len) f.gesture = null; }
         if (f.mood) face = { ...face, ...f.mood };
-        if (!f.hidden) act(f, p, face, mdt, W.clock, { hands: !f.gesture });
+        if (!f.hidden && !f.live) act(f, p, face, mdt, W.clock, { hands: !f.gesture });
         if (typeof f.talk === 'number' && f.voice) face.mouth = { ...(face.mouth || {}), open: Math.min(1, f.talk * 1.3) };
         else if (f.talk) face.mouth = { ...(face.mouth || {}), open: Math.max(0, Math.sin(W.clock * 17) * 0.5 + Math.sin(W.clock * 11) * 0.3) };
         f.F.face(face);

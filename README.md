@@ -48,6 +48,24 @@ usually wins.
 
 In the duel, either side can be any of the three.
 
+## 🎥 體感 Motion
+
+The fourth mode puts the hero in front of you like a mirror. Press 📷 to turn on the front camera (an iPad's, a
+phone's or a laptop's) and stand two or three metres back. A pose model (MediaPipe Pose Landmarker) runs on the
+device and finds 33 points of your body. Nothing is uploaded. The minifig copies you: arms swung at the shoulder and
+out to the side, legs at the hip, the body leaning and turning, the head turned, a jump. Make the gesture of the
+hero's move and he performs it:
+
+| Hero | Move | Gesture |
+|---|---|---|
+| 奕叡 Yi Rui | 一刀啟程 | both hands raised over the head, held a moment, then chopped down hard |
+| 奕碩 Yi Shuo | 旋風球 | a knee brought up to the waist, or a foot kicked up high |
+| 冷笑天 Leng Xiaotian | 笑盡天下 | both palms drawn to the hips, held a moment, then thrust forward together |
+
+A meter on the card fills as the gesture is made. The camera picture is shown small in the corner with your bones
+drawn over it. The pose is mapped in `js/motion.js`; the engine takes it through `fighter.live`, in place of the
+resting pose.
+
 ## 黑風寨 The Black Wind gang
 
 They are the villains of episode 1. 黑熊 Black Bear is the bearded chief with a wooden club. 刀疤 Scar is the second,

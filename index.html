@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#141c34">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&family=Noto+Sans+TC:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
   <canvas id="cv"></canvas>
@@ -21,11 +21,13 @@
     <p id="bio"></p>
     <h2>招式 · Moves</h2>
     <nav id="moves"></nav>
+    <section id="motionp" hidden></section>
   </section>
+  <div id="camBox" hidden><video id="cam" playsinline muted autoplay></video><canvas id="bones"></canvas><div id="look" hidden></div></div>
   <div id="bar"><button id="slow"></button><button id="reset"></button><button id="auto" class="on"></button><button id="lang">EN</button></div>
   <div id="hint"></div>
   <div id="note"></div>
-  <script type="module" src="js/main.js?v=6"></script>
+  <script type="module" src="js/main.js?v=7"></script>
   <script src="/hub.js" defer data-pos="top-right"></script>
 </body>
 </html>
